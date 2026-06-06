@@ -12,6 +12,7 @@
     "seed:reset": "node scripts/seed-test-data.js --reset"
   },
   "dependencies": {
+    "@google/genai": "^2.8.0",
     "@supabase/supabase-js": "^2.39.7",
     "bcryptjs": "^2.4.3",
     "compression": "^1.7.4",
