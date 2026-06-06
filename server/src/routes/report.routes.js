@@ -12,5 +12,6 @@ router.get('/spending',           reportController.spending);
 router.get('/vendor-performance', reportController.vendorPerformance);
 router.get('/rfq-statistics',     reportController.rfqStatistics);
 router.get('/spending/export',    reportController.exportSpending);
+router.get('/export',             reportController.exportReport);
 
 module.exports = router;
