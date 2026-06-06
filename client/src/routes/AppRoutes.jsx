@@ -16,6 +16,7 @@ import VendorManagementPage from '../pages/VendorManagementPage';
 import RfqManagementPage from '../pages/RfqManagementPage';
 import VendorPortalPage from '../pages/VendorPortalPage';
 import QuotationComparisonPage from '../pages/QuotationComparisonPage';
+import ApprovalWorkflowPage from '../pages/ApprovalWorkflowPage';
 import { useAuth } from '../context/AuthContext';
 
 const RoleAwareRedirect = () => {
@@ -38,6 +39,9 @@ const AppRoutes = () => (
     <Route path="/vendor-portal" element={<ProtectedRoute><VendorPortalPage /></ProtectedRoute>} />
     <Route path="/compare" element={<ProtectedRoute><QuotationComparisonPage /></ProtectedRoute>} />
     <Route path="/compare/:rfqId" element={<ProtectedRoute><QuotationComparisonPage /></ProtectedRoute>} />
+    
+    {/* Workflow Approvals */}
+    <Route path="/approvals" element={<ProtectedRoute><ApprovalWorkflowPage /></ProtectedRoute>} />
     
     {/* Billing & System admin */}
     <Route path="/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />

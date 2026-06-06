@@ -61,7 +61,7 @@ export const erpApi = {
     },
     history: () => request('/approvals/history', { method: 'GET' }),
     getById: (id) => request(`/approvals/${id}`, { method: 'GET' }),
-    decide: (body) => request('/approvals/decide', { method: 'POST', body: JSON.stringify(body) }),
+    decide: (body) => request('/approvals', { method: 'POST', body: JSON.stringify(body) }),
   },
 
   // Purchase Orders
