@@ -56,10 +56,17 @@ exports.markRead = async (req, res, next) => {
 
 exports.markAllRead = async (req, res, next) => {
   try {
-    const { error } = await notificationRepository
+    let query = notificationRepository
       .query()
-      .update({ read_at: new Date().toISOString() })
-      .eq('user_id', req.user.id);
+      .update({ read_at: new Date().toISOString() });
+
+    if (req.user?.role !== 'admin') {
+      query = query.eq('user_id', req.user.id);
+    } else {
+      query = query.is('read_at', null);
+    }
+
+    const { error } = await query;
 
     if (error) {
       throw error;

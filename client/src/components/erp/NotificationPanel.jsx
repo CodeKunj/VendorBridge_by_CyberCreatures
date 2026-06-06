@@ -8,10 +8,6 @@ const NotificationPanel = ({ open, notifications = [], onMarkRead, onMarkAllRead
     return Array.isArray(notifications) ? notifications : [];
   }, [notifications]);
 
-  if (!open) {
-    return null;
-  }
-
   const filteredNotifications = useMemo(() => {
     if (activeTab === 'all') return safeNotifications;
     return safeNotifications.filter(n => {
@@ -24,6 +20,10 @@ const NotificationPanel = ({ open, notifications = [], onMarkRead, onMarkAllRead
       return false;
     });
   }, [safeNotifications, activeTab]);
+
+  if (!open) {
+    return null;
+  }
 
   const getBadgeClass = (type) => {
     switch ((type || '').toLowerCase()) {

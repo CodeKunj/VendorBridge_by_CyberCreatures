@@ -9,6 +9,17 @@ import {
   Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,
   Pie, PieChart, LineChart, Line,
 } from 'recharts';
+import { 
+  Building, 
+  FileText, 
+  Clock, 
+  Package, 
+  Receipt, 
+  Award, 
+  AlertCircle,
+  HelpCircle,
+  UserPlus
+} from 'lucide-react';
 
 /* ── Design tokens ────────────────────────────────────────────────── */
 const T = {
@@ -223,7 +234,7 @@ const css = {
 };
 
 /* ── Subcomponents ────────────────────────────────────────────────── */
-const StatCard = ({ icon, color, bg, title, value, sub }) => {
+const StatCard = ({ icon: Icon, color, bg, title, value, sub }) => {
   const [hov, setHov] = useState(false);
   return (
     <div
@@ -235,7 +246,9 @@ const StatCard = ({ icon, color, bg, title, value, sub }) => {
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
     >
-      <div style={{ ...css.statIcon, background: bg, color }}>{icon}</div>
+      <div style={{ ...css.statIcon, background: bg, color }}>
+        <Icon size={18} />
+      </div>
       <p style={css.statValue}>{value}</p>
       <p style={css.statLabel}>{title}</p>
       {sub && <p style={css.statSub}>{sub}</p>}
@@ -276,8 +289,10 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 /* qa icons map */
 const QA_ICONS = {
-  'rfqs': '📋', 'vendors': '🏭', 'purchase-orders': '📦',
-  'invoices': '🧾', 'approvals': '✅',
+  'new-rfq': FileText,
+  'new-po': Package,
+  'new-invoice': Receipt,
+  'new-vendor': UserPlus,
 };
 
 /* ── Main page ────────────────────────────────────────────────────── */
@@ -311,11 +326,11 @@ const DashboardPage = () => {
   const spendingSummary = dashboard?.charts?.spendingSummary || [];
 
   const statCards = useMemo(() => [
-    { icon: '🏭', color: T.primary, bg: '#e8edff', title: 'Total Vendors', value: dashboard?.overview?.vendors ?? 0, sub: 'Approved suppliers' },
-    { icon: '📋', color: '#6647c3', bg: '#ede8ff', title: 'Active RFQs', value: dashboard?.overview?.activeRfqs ?? 0, sub: 'Open requests' },
-    { icon: '⏳', color: '#b45309', bg: '#fef3c7', title: 'Pending Approvals', value: dashboard?.overview?.pendingApprovals ?? 0, sub: 'Awaiting decision' },
-    { icon: '📦', color: T.tertiary, bg: '#d1fae5', title: 'Purchase Orders', value: dashboard?.overview?.purchaseOrders ?? 0, sub: 'Raised POs' },
-    { icon: '🧾', color: '#be185d', bg: '#fce7f3', title: 'Invoices', value: dashboard?.overview?.invoices ?? 0, sub: 'Processed' },
+    { icon: Building, color: T.primary, bg: '#e8edff', title: 'Total Vendors', value: dashboard?.overview?.vendors ?? 0, sub: 'Approved suppliers' },
+    { icon: FileText, color: '#6647c3', bg: '#ede8ff', title: 'Active RFQs', value: dashboard?.overview?.activeRfqs ?? 0, sub: 'Open requests' },
+    { icon: Clock, color: '#b45309', bg: '#fef3c7', title: 'Pending Approvals', value: dashboard?.overview?.pendingApprovals ?? 0, sub: 'Awaiting decision' },
+    { icon: Package, color: T.tertiary, bg: '#d1fae5', title: 'Purchase Orders', value: dashboard?.overview?.purchaseOrders ?? 0, sub: 'Raised POs' },
+    { icon: Receipt, color: '#be185d', bg: '#fce7f3', title: 'Invoices', value: dashboard?.overview?.invoices ?? 0, sub: 'Processed' },
   ], [dashboard]);
 
   const breadcrumbs = useMemo(() => [{ label: 'Home', href: '/' }, { label: 'Dashboard', href: '/dashboard' }], []);
@@ -342,13 +357,14 @@ const DashboardPage = () => {
               <div style={css.heroBg} />
               <div style={{ position: 'relative', zIndex: 1 }}>
                 <p style={{ margin: '0 0 6px', fontSize: 13, opacity: 0.8, fontWeight: 500 }}>
-                  Good day, {user?.name?.split(' ')[0] || 'Manager'} 👋
+                  Good day, {user?.name?.split(' ')[0] || 'Manager'}
                 </p>
                 <h1 style={css.heroTitle}>Procurement Dashboard</h1>
                 <p style={css.heroSub}>Overview of sourcing campaigns, approvals, and transaction tracking.</p>
               </div>
               <span style={css.rolePill}>
-                🎖 {user?.role || 'Procurement'}
+                <Award size={14} style={{ marginRight: '6px' }} />
+                {user?.role || 'Procurement'}
               </span>
             </div>
 
@@ -436,13 +452,18 @@ const DashboardPage = () => {
                   <SectionCard title="Quick Actions" sub="One-click shortcuts">
                     {quickActions.length === 0
                       ? <p style={{ color: T.outline, fontSize: 14 }}>No actions available.</p>
-                      : quickActions.map((a) => (
-                        <button key={a.id} className="dash-qa-btn" style={css.qaBtn} onClick={() => navigate(a.href)}>
-                          <span style={css.qaIcon}>{QA_ICONS[a.id] || '⚡'}</span>
-                          {a.label}
-                          <span style={{ marginLeft: 'auto', color: T.outline, fontSize: 18 }}>›</span>
-                        </button>
-                      ))}
+                      : quickActions.map((a) => {
+                          const IconComponent = QA_ICONS[a.id] || HelpCircle;
+                          return (
+                            <button key={a.id} className="dash-qa-btn" style={css.qaBtn} onClick={() => navigate(a.href)}>
+                              <span style={css.qaIcon}>
+                                <IconComponent size={16} />
+                              </span>
+                              {a.label}
+                              <span style={{ marginLeft: 'auto', color: T.outline, fontSize: 18 }}>›</span>
+                            </button>
+                          );
+                        })}
                   </SectionCard>
                 </div>
 

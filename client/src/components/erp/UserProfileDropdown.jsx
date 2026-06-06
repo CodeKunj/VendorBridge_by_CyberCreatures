@@ -23,6 +23,22 @@ const UserProfileDropdown = ({ user, onLogout, onProfile, onSettings }) => {
     .map((part) => part[0]?.toUpperCase())
     .join('');
 
+  const PRESET_GRADIENTS = {
+    blue: { from: '#264dd9', to: '#4568f3' },
+    purple: { from: '#6647c3', to: '#9c7ffd' },
+    teal: { from: '#006a38', to: '#008648' },
+    pink: { from: '#d946ef', to: '#8b5cf6' },
+    emerald: { from: '#0f766e', to: '#0d9488' },
+    dark: { from: '#2e3134', to: '#444655' }
+  };
+
+  const avatarUrl = user?.avatar_url || 'blue';
+  const isCustomUrl = typeof avatarUrl === 'string' && avatarUrl.startsWith('http');
+  const gradient = PRESET_GRADIENTS[avatarUrl] || PRESET_GRADIENTS['blue'];
+  const avatarStyle = isCustomUrl ? {} : {
+    background: `linear-gradient(135deg, ${gradient.from}, ${gradient.to})`
+  };
+
   return (
     <div className="erp-profile-dropdown" ref={rootRef}>
       <button
@@ -32,7 +48,22 @@ const UserProfileDropdown = ({ user, onLogout, onProfile, onSettings }) => {
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        <span className="erp-profile-dropdown__avatar" aria-hidden="true">{initials}</span>
+        {isCustomUrl ? (
+          <img 
+            src={avatarUrl} 
+            className="erp-profile-dropdown__avatar" 
+            style={{ objectFit: 'cover' }} 
+            alt="User avatar" 
+          />
+        ) : (
+          <span 
+            className="erp-profile-dropdown__avatar" 
+            style={avatarStyle} 
+            aria-hidden="true"
+          >
+            {initials}
+          </span>
+        )}
         <span style={{ textAlign: 'left' }}>
           <span className="erp-profile-dropdown__name">{user?.name || 'User'}</span>
           <span className="erp-profile-dropdown__role">{user?.roleLabel || user?.role || 'ERP User'}</span>
