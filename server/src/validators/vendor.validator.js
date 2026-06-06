@@ -32,9 +32,9 @@ const updateVendorValidation = [
 const listVendorValidation = [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
-  query('search').optional().trim().isString(),
-  query('status').optional().isIn(vendorStatusValues).withMessage('Invalid vendor status'),
-  query('category').optional().trim().isString(),
+  query('search').optional({ values: 'falsy' }).trim().isString(),
+  query('status').optional({ values: 'falsy' }).isIn(vendorStatusValues).withMessage('Invalid vendor status'),
+  query('category').optional({ values: 'falsy' }).trim().isString(),
 ];
 
 module.exports = {
