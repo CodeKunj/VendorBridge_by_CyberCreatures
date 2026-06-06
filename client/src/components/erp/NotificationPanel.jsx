@@ -73,7 +73,7 @@ const NotificationPanel = ({ open, notifications = [], onMarkRead, onMarkAllRead
         </header>
 
         {/* Tab Filters */}
-        <div style={{ display: 'flex', gap: '4px', padding: '10px 16px', borderBottom: '1px solid var(--erp-outline-variant)', overflowX: 'auto', background: 'var(--erp-surface-dim)', flexShrink: 0 }}>
+        <div className="no-scrollbar" style={{ display: 'flex', gap: '4px', padding: '10px 16px', borderBottom: '1px solid var(--erp-outline-variant)', overflowX: 'auto', background: 'var(--erp-surface-dim)', flexShrink: 0 }}>
           {['all', 'rfq', 'quotation', 'approval', 'po', 'invoice'].map((tab) => (
             <button
               key={tab}

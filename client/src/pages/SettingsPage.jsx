@@ -202,12 +202,6 @@ const SettingsPage = () => {
       onProfile={() => navigate('/dashboard')}
       onSettings={() => navigate('/settings')}
     >
-      <div className="erp-breadcrumbs">
-        <span className="erp-breadcrumbs__item">ERP Dashboard</span>
-        <span className="erp-breadcrumbs__separator">/</span>
-        <span className="erp-breadcrumbs__current">System Settings</span>
-      </div>
-
       <div className="erp-content">
         <h1 className="erp-title">System & Administrative Settings</h1>
         <p className="erp-subtitle">Manage company profiles, SMTP mail dispatchers, threshold workflows, audit lists, and secure API keys.</p>

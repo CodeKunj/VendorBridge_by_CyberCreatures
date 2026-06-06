@@ -46,13 +46,19 @@ const EnterpriseErpLayout = ({
   onLogout,
   onProfile,
   onSettings,
+  searchValue: parentSearchValue,
+  onSearchChange: parentOnSearchChange,
   children,
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState('');
+  const [localSearchValue, setLocalSearchValue] = useState('');
+
+  const searchValue = parentSearchValue !== undefined ? parentSearchValue : localSearchValue;
+  const setSearchValue = parentOnSearchChange !== undefined ? parentOnSearchChange : setLocalSearchValue;
+
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 

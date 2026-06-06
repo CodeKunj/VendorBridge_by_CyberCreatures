@@ -318,12 +318,33 @@ const DashboardPage = () => {
   const handleNavigate = (item) => navigate(item.id === 'dashboard' ? '/dashboard' : `/${item.id}`);
   const handleLogout = async () => { await logout(); navigate('/login', { replace: true }); };
 
+  const [searchQuery, setSearchQuery] = useState('');
+
   const notifications = dashboard?.sections?.notifications || [];
   const recentActivities = dashboard?.sections?.recentActivities || [];
   const quickActions = dashboard?.sections?.quickActions || [];
   const monthlyTrend = dashboard?.charts?.monthlyTrend || [];
   const vendorPerformance = dashboard?.charts?.vendorPerformance || [];
   const spendingSummary = dashboard?.charts?.spendingSummary || [];
+
+  const filteredNotifications = useMemo(() => {
+    if (!searchQuery) return notifications;
+    const q = searchQuery.toLowerCase();
+    return notifications.filter(n =>
+      (n.category || '').toLowerCase().includes(q) ||
+      (n.title || '').toLowerCase().includes(q) ||
+      (n.message || '').toLowerCase().includes(q)
+    );
+  }, [notifications, searchQuery]);
+
+  const filteredActivities = useMemo(() => {
+    if (!searchQuery) return recentActivities;
+    const q = searchQuery.toLowerCase();
+    return recentActivities.filter(a =>
+      (a.title || '').toLowerCase().includes(q) ||
+      (a.message || '').toLowerCase().includes(q)
+    );
+  }, [recentActivities, searchQuery]);
 
   const statCards = useMemo(() => [
     { icon: Building, color: T.primary, bg: '#e8edff', title: 'Total Vendors', value: dashboard?.overview?.vendors ?? 0, sub: 'Approved suppliers' },
@@ -351,6 +372,8 @@ const DashboardPage = () => {
         onLogout={handleLogout}
         onProfile={() => navigate('/dashboard')}
         onSettings={() => navigate('/settings')}
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
       >
         {/* Hero */}
             <div style={css.hero}>
@@ -470,9 +493,9 @@ const DashboardPage = () => {
                 {/* Bottom: Activities + Notifications */}
                 <div style={css.bottomGrid}>
                   <SectionCard title="Recent Activities" sub="Latest operational events">
-                    {recentActivities.length === 0
+                    {filteredActivities.length === 0
                       ? <p style={{ color: T.outline, fontSize: 14 }}>No recent activity.</p>
-                      : recentActivities.map((a) => (
+                      : filteredActivities.map((a) => (
                         <div key={a.id} style={css.activityItem}>
                           <div style={css.activityDot} />
                           <div>
@@ -487,9 +510,9 @@ const DashboardPage = () => {
                   </SectionCard>
 
                   <SectionCard title="Notifications" sub="System & workflow alerts">
-                    {notifications.length === 0
+                    {filteredNotifications.length === 0
                       ? <p style={{ color: T.outline, fontSize: 14 }}>No notifications.</p>
-                      : notifications.map((n) => (
+                      : filteredNotifications.map((n) => (
                         <div key={n.id} style={{
                           ...css.notifItem,
                           borderLeftColor: n.category === 'Alert' ? T.error
