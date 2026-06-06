@@ -4,12 +4,17 @@ const env = require('../config/env');
 const authSessionRepository = require('../repositories/authSession.repository');
 
 const authenticate = async (req, res, next) => {
+  let token;
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return next(new AppError('No token provided', 401));
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else if (req.query.access_token) {
+    token = req.query.access_token;
   }
 
-  const token = authHeader.split(' ')[1];
+  if (!token) {
+    return next(new AppError('No token provided', 401));
+  }
   try {
     const decoded = jwt.verify(token, env.jwtSecret);
     if (!decoded.sid) {
