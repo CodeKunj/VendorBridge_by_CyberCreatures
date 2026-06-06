@@ -2,6 +2,7 @@ const BaseRepository = require('../repositories/base.repository');
 const { getPagination } = require('../utils/paginate');
 const { sendSuccess, sendError } = require('../utils/response');
 const supabase = require('../config/db');
+const { logActivity, notifyUser } = require('../utils/logger');
 const { createTransporter } = require('../config/mailer');
 const PDFDocument = require('pdfkit');
 
@@ -203,6 +204,22 @@ exports.create = async (req, res, next) => {
       throw error;
     }
 
+    // Audit Log
+    await logActivity(req.user.id, `Created Invoice ${data.invoice_number}`, 'Billing', data.id, { amount: data.total_amount }, req.ip);
+
+    // Notify buyer
+    const { data: po } = await supabase.from('purchase_orders').select('buyer_id, po_number').eq('id', data.po_id).maybeSingle();
+    if (po?.buyer_id) {
+      await notifyUser(
+        po.buyer_id,
+        'New Invoice Submitted',
+        `A new invoice ${data.invoice_number} has been submitted for Purchase Order ${po.po_number}.`,
+        'invoice',
+        data.id,
+        'invoices'
+      );
+    }
+
     return sendSuccess(res, 201, 'Invoice created successfully', data);
   } catch (error) {
     next(error);
@@ -318,6 +335,34 @@ exports.updateStatus = async (req, res, next) => {
 
     if (error) {
       throw error;
+    }
+
+    // Audit Log
+    await logActivity(req.user.id, `Updated Invoice status to ${status}`, 'Billing', data.id, { status }, req.ip);
+
+    // Notify buyer and vendor
+    const { data: po } = await supabase.from('purchase_orders').select('buyer_id, po_number').eq('id', data.po_id).maybeSingle();
+    if (po?.buyer_id) {
+      await notifyUser(
+        po.buyer_id,
+        'Invoice Status Updated',
+        `Invoice ${data.invoice_number} status has been updated to ${status}.`,
+        'invoice',
+        data.id,
+        'invoices'
+      );
+    }
+
+    const { data: vendor } = await supabase.from('vendors').select('user_id').eq('id', data.vendor_id).maybeSingle();
+    if (vendor?.user_id) {
+      await notifyUser(
+        vendor.user_id,
+        'Invoice Status Updated',
+        `Invoice ${data.invoice_number} status has been updated to ${status}.`,
+        'invoice',
+        data.id,
+        'invoices'
+      );
     }
 
     return sendSuccess(res, 200, 'Invoice status updated', data);

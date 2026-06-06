@@ -1,13 +1,15 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import './erp-layout.css';
 import Sidebar from './Sidebar';
 import TopNavbar from './TopNavbar';
 import Breadcrumbs from './Breadcrumbs';
 import NotificationPanel from './NotificationPanel';
+import { erpApi } from '../../api/erpApi';
+import { useAuth } from '../../context/AuthContext';
 
 const defaultNavItems = [
   { id: 'dashboard', label: 'Dashboard', caption: 'Overview and KPIs', icon: 'D' },
-  { id: 'vendor-portal', label: 'Vendor Portal', caption: 'Assigned RFQs and quotations', icon: 'VP' },
+  { id: 'vendor-portal', label: 'Vendor Portal', caption: 'Assigned RFQs and bids', icon: 'VP' },
   { id: 'rfqs', label: 'RFQs', caption: 'Requests for quotation', icon: 'Q' },
   { id: 'compare', label: 'Compare Bids', caption: 'Quotation compare matrix', icon: 'C' },
   { id: 'approvals', label: 'Approvals', caption: 'Workflow approvals', icon: 'A' },
@@ -15,18 +17,16 @@ const defaultNavItems = [
   { id: 'vendors', label: 'Vendors', caption: 'Supplier records', icon: 'V' },
   { id: 'invoices', label: 'Invoices', caption: 'Billing operations', icon: 'I' },
   { id: 'reports', label: 'Reports', caption: 'Analytics and exports', icon: 'R' },
+  { id: 'activity-logs', label: 'Activity Logs', caption: 'System audit logs', icon: 'L', adminOnly: true },
   { id: 'settings', label: 'Settings', caption: 'System configuration', icon: 'S' },
 ];
 
 const EnterpriseErpLayout = ({
-  user,
-  navItems = defaultNavItems,
   breadcrumbs = [
     { label: 'Home', href: '/' },
     { label: 'Dashboard', href: '/dashboard' },
     { label: 'Operations' },
   ],
-  notifications = [],
   activeNavId = 'dashboard',
   onNavigate,
   onLogout,
@@ -34,14 +34,84 @@ const EnterpriseErpLayout = ({
   onSettings,
   children,
 }) => {
+  const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
+  
+  // Notification State
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const resolvedUser = useMemo(() => ({
     ...user,
     roleLabel: user?.roleLabel || user?.role || 'ERP User',
   }), [user]);
+
+  // Filter Nav Items based on user role
+  const navItems = useMemo(() => {
+    return defaultNavItems.filter(item => {
+      if (item.adminOnly && user?.role !== 'admin') {
+        return false;
+      }
+      // Vendors don't see core procurement screens
+      if (user?.role === 'vendor' && ['dashboard', 'vendors', 'compare', 'reports', 'activity-logs'].includes(item.id)) {
+        return false;
+      }
+      return true;
+    });
+  }, [user]);
+
+  // Fetch notifications helper
+  const loadNotifications = async () => {
+    try {
+      if (!user) return;
+      const res = await erpApi.notifications.list({ limit: 50 });
+      if (res && res.data) {
+        setNotifications(res.data);
+        const unread = res.data.filter(n => !n.read_at).length;
+        setUnreadCount(unread);
+      }
+    } catch (err) {
+      console.warn('Failed to load notifications:', err.message);
+    }
+  };
+
+  // Poll notifications in the background for real-time alerts
+  useEffect(() => {
+    loadNotifications();
+    const interval = setInterval(() => {
+      loadNotifications();
+    }, 10000); // Poll every 10 seconds
+    return () => clearInterval(interval);
+  }, [user]);
+
+  const handleMarkRead = async (id) => {
+    try {
+      await erpApi.notifications.markRead(id);
+      loadNotifications();
+    } catch (err) {
+      console.error('Failed to mark read:', err);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await erpApi.notifications.markAllRead();
+      loadNotifications();
+    } catch (err) {
+      console.error('Failed to mark all read:', err);
+    }
+  };
+
+  const handleDeleteNotification = async (id) => {
+    try {
+      await erpApi.notifications.delete(id);
+      loadNotifications();
+    } catch (err) {
+      console.error('Failed to delete notification:', err);
+    }
+  };
 
   return (
     <div className={`erp-shell${sidebarOpen ? ' erp-shell--sidebar-open' : ''}`}>
@@ -68,7 +138,7 @@ const EnterpriseErpLayout = ({
             onLogout={onLogout}
             onProfile={onProfile}
             onSettings={onSettings}
-            notificationCount={notifications.length}
+            notificationCount={unreadCount}
           />
 
           <Breadcrumbs items={breadcrumbs} />
@@ -82,6 +152,9 @@ const EnterpriseErpLayout = ({
       <NotificationPanel
         open={notificationsOpen}
         notifications={notifications}
+        onMarkRead={handleMarkRead}
+        onMarkAllRead={handleMarkAllRead}
+        onDelete={handleDeleteNotification}
         onClose={() => setNotificationsOpen(false)}
       />
     </div>

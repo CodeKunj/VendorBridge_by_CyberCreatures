@@ -18,6 +18,7 @@ import VendorPortalPage from '../pages/VendorPortalPage';
 import QuotationComparisonPage from '../pages/QuotationComparisonPage';
 import ApprovalWorkflowPage from '../pages/ApprovalWorkflowPage';
 import PurchaseOrdersPage from '../pages/PurchaseOrdersPage';
+import ActivityLogsPage from '../pages/ActivityLogsPage';
 import { useAuth } from '../context/AuthContext';
 
 const RoleAwareRedirect = () => {
@@ -49,6 +50,7 @@ const AppRoutes = () => (
     <Route path="/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
     <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
     <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+    <Route path="/activity-logs" element={<ProtectedRoute><ActivityLogsPage /></ProtectedRoute>} />
     
     {/* Auth routes */}
     <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />

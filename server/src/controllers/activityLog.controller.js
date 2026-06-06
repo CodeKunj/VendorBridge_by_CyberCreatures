@@ -10,7 +10,7 @@ exports.list = async (req, res, next) => {
 
     const { data, count, error } = await activityLogRepository
       .query()
-      .select('*', { count: 'exact' })
+      .select('*, users(name, email, role)', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(from, to);
 

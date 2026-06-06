@@ -113,7 +113,15 @@ export const erpApi = {
       return request(`/notifications?${q}`, { method: 'GET' });
     },
     markRead: (id) => request(`/notifications/${id}/read`, { method: 'PATCH' }),
-    markAllRead: () => request('/notifications/read-all', { method: 'PATCH' }),
+    markAllRead: () => request('/notifications/mark-all-read', { method: 'PATCH' }),
     delete: (id) => request(`/notifications/${id}`, { method: 'DELETE' }),
+  },
+
+  // Activity Logs
+  activityLogs: {
+    list: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request(`/activity-logs?${q}`, { method: 'GET' });
+    },
   },
 };

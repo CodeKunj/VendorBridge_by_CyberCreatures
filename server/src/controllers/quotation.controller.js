@@ -2,6 +2,7 @@ const supabase = require('../config/db');
 const { sendSuccess, sendError, sendPaginated } = require('../utils/response');
 const { getPagination } = require('../utils/paginate');
 const { uploadQuotationAttachment, removeQuotationAttachment } = require('../utils/quotationsStorage');
+const { logActivity, notifyUser } = require('../utils/logger');
 
 const quotationColumns = `*, rfqs(rfq_number, title, deadline, status), vendors(company_name, vendor_code), quotation_items(*), quotation_attachments(*)`;
 
@@ -121,19 +122,22 @@ exports.create = async (req, res, next) => {
       );
     }
 
+    // Audit Log
+    await logActivity(user.id, `Submitted Quotation for RFQ ${rfq.rfq_number}`, 'Sourcing', quotation.id, { amount: total_amount }, req.ip);
+
     // Notify procurement officers
     const { data: officers } = await supabase.from('users').select('id').eq('role', 'procurement_officer').eq('status', 'active');
-    if (officers?.length > 0) {
-      await supabase.from('notifications').insert(
-        officers.map(o => ({
-          user_id: o.id,
-          title: 'New Quotation Submitted',
-          message: `A quotation has been submitted for RFQ ${rfq.rfq_number}`,
-          type: 'quotation',
-          entity_id: quotation.id,
-          entity_type: 'quotation',
-        }))
-      );
+    if (officers) {
+      for (const officer of officers) {
+        await notifyUser(
+          officer.id,
+          'New Bid Quotation Submitted',
+          `Supplier ${vendor.company_name || 'Vendor'} submitted a bid of $${total_amount} for RFQ ${rfq.rfq_number}`,
+          'quotation',
+          quotation.id,
+          'quotations'
+        );
+      }
     }
 
     return sendSuccess(res, 201, 'Quotation submitted', quotation);
@@ -146,7 +150,7 @@ exports.update = async (req, res, next) => {
     const items = req.body.items !== undefined ? parseJsonField(req.body.items, []) : null;
     const user = req.user;
 
-    const { data: existing } = await supabase.from('quotations').select('*, rfqs(deadline), quotation_attachments(*), vendors(user_id)').eq('id', req.params.id).single();
+    const { data: existing } = await supabase.from('quotations').select('*, rfqs(deadline, rfq_number), quotation_attachments(*), vendors(user_id)').eq('id', req.params.id).single();
     if (!existing) return sendError(res, 404, 'Quotation not found');
     if (existing.vendors?.user_id !== user.id) return sendError(res, 403, 'You can only edit your own quotation');
     if (new Date(existing.rfqs.deadline) < new Date()) return sendError(res, 400, 'Cannot edit after deadline');
@@ -188,12 +192,17 @@ exports.update = async (req, res, next) => {
       );
     }
 
+    // Audit Log
+    await logActivity(user.id, `Updated Quotation for RFQ ${existing.rfqs?.rfq_number}`, 'Sourcing', data.id, { amount: total_amount }, req.ip);
+
     return sendSuccess(res, 200, 'Quotation updated', data);
   } catch (err) { next(err); }
 };
 
 exports.withdraw = async (req, res, next) => {
   try {
+    const { data: existing } = await supabase.from('quotations').select('*, rfqs(rfq_number)').eq('id', req.params.id).single();
+    
     const { data, error } = await supabase
       .from('quotations')
       .update({ status: 'withdrawn' })
@@ -202,6 +211,10 @@ exports.withdraw = async (req, res, next) => {
       .single();
 
     if (error) throw error;
+
+    // Audit Log
+    await logActivity(req.user.id, `Withdrew Quotation for RFQ ${existing?.rfqs?.rfq_number}`, 'Sourcing', req.params.id, {}, req.ip);
+
     return sendSuccess(res, 200, 'Quotation withdrawn', data);
   } catch (err) { next(err); }
 };

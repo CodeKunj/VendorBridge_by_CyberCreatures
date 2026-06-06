@@ -2,6 +2,7 @@ const BaseRepository = require('../repositories/base.repository');
 const { getPagination } = require('../utils/paginate');
 const { sendSuccess } = require('../utils/response');
 const supabase = require('../config/db');
+const { logActivity, notifyUser } = require('../utils/logger');
 
 const approvalRepository = new BaseRepository('approvals');
 
@@ -213,6 +214,36 @@ exports.decide = async (req, res, next) => {
         .from('quotations')
         .update({ status: 'rejected' })
         .eq('id', app.quotation_id);
+    // Audit Log
+    await logActivity(req.user.id, `Workflow approval decided: ${status}`, 'Approvals', app.id, { comments }, req.ip);
+
+    // Get RFQ creator and Vendor user details
+    if (app.rfq_id) {
+      const { data: rfq } = await supabase.from('rfqs').select('created_by, rfq_number').eq('id', app.rfq_id).maybeSingle();
+      if (rfq && rfq.created_by) {
+        await notifyUser(
+          rfq.created_by,
+          `Workflow Decision: ${status.toUpperCase()}`,
+          `RFQ Sourcing ${rfq.rfq_number} workflow review has been marked as ${status}.`,
+          'approval',
+          app.id,
+          'approvals'
+        );
+      }
+    }
+
+    if (app.quotation_id) {
+      const { data: quot } = await supabase.from('quotations').select('vendor_id, vendors(user_id, company_name)').eq('id', app.quotation_id).maybeSingle();
+      if (quot && quot.vendors?.user_id) {
+        await notifyUser(
+          quot.vendors.user_id,
+          `Bid Proposal ${status === 'approved' ? 'Accepted' : 'Rejected'}`,
+          `Your quotation bid has been ${status === 'approved' ? 'accepted' : 'rejected'} by management review.`,
+          'approval',
+          app.id,
+          'approvals'
+        );
+      }
     }
 
     return sendSuccess(res, 200, 'Approval decision saved', app);

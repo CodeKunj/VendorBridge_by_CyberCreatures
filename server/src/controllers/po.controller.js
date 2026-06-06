@@ -2,6 +2,7 @@ const BaseRepository = require('../repositories/base.repository');
 const { getPagination } = require('../utils/paginate');
 const { sendSuccess, sendError } = require('../utils/response');
 const supabase = require('../config/db');
+const { logActivity, notifyUser } = require('../utils/logger');
 const PDFDocument = require('pdfkit');
 
 const poRepository = new BaseRepository('purchase_orders');
@@ -152,16 +153,19 @@ exports.create = async (req, res, next) => {
         .maybeSingle();
 
       if (vendor?.user_id) {
-        await supabase.from('notifications').insert({
-          user_id: vendor.user_id,
-          title: 'New Purchase Order Issued',
-          message: `Purchase order ${data.po_number} has been issued to you.`,
-          type: 'po',
-          entity_id: data.id,
-          entity_type: 'purchase_orders'
-        });
+        await notifyUser(
+          vendor.user_id,
+          'New Purchase Order Issued',
+          `Purchase order ${data.po_number} has been issued to you.`,
+          'po',
+          data.id,
+          'purchase_orders'
+        );
       }
     }
+
+    // Audit Log
+    await logActivity(req.user.id, `Issued Purchase Order ${data.po_number}`, 'Purchasing', data.id, { amount: data.total_amount }, req.ip);
 
     return sendSuccess(res, 201, 'Purchase order created', data);
   } catch (error) {
@@ -300,6 +304,39 @@ exports.updateStatus = async (req, res, next) => {
 
     if (error) {
       throw error;
+    }
+
+    // Audit Log
+    await logActivity(req.user.id, `Updated Purchase Order status to ${status}`, 'Purchasing', data.id, { status }, req.ip);
+
+    // Notify appropriate party
+    if (status === 'accepted') {
+      // Vendor accepted -> notify buyer
+      await notifyUser(
+        data.buyer_id,
+        'Purchase Order Accepted',
+        `Purchase order ${data.po_number} has been accepted by the supplier.`,
+        'po',
+        data.id,
+        'purchase_orders'
+      );
+    } else {
+      // Buyer changed status -> notify vendor
+      const { data: vendor } = await supabase
+        .from('vendors')
+        .select('user_id')
+        .eq('id', data.vendor_id)
+        .maybeSingle();
+      if (vendor?.user_id) {
+        await notifyUser(
+          vendor.user_id,
+          `Purchase Order Status: ${status.toUpperCase()}`,
+          `Purchase order ${data.po_number} status has been updated to ${status}.`,
+          'po',
+          data.id,
+          'purchase_orders'
+        );
+      }
     }
 
     return sendSuccess(res, 200, 'Purchase order status updated', data);
