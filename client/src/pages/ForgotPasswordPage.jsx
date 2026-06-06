@@ -18,7 +18,11 @@ const ForgotPasswordPage = () => {
       const response = await authApi.forgotPassword({ email });
       setMessage(response.message || 'If that email address exists in our database, we will send a password reset link.');
     } catch (err) {
-      setError(err.message || 'Unable to request password reset link.');
+      if (err.payload?.errors && Array.isArray(err.payload.errors)) {
+        setError(err.payload.errors.map((e) => e.message).join(', '));
+      } else {
+        setError(err.message || 'Unable to request password reset link.');
+      }
     } finally {
       setLoading(false);
     }

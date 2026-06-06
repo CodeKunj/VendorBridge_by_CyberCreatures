@@ -18,7 +18,11 @@ const SignupPage = () => {
       await signup(form);
       navigate('/dashboard', { replace: true });
     } catch (err) {
-      setError(err.message || 'Unable to create account');
+      if (err.payload?.errors && Array.isArray(err.payload.errors)) {
+        setError(err.payload.errors.map((e) => e.message).join(', '));
+      } else {
+        setError(err.message || 'Unable to create account');
+      }
     } finally {
       setLoading(false);
     }

@@ -21,7 +21,11 @@ const ResetPasswordPage = () => {
       const response = await authApi.resetPassword(form);
       setMessage(response.message || 'Your password has been successfully reset.');
     } catch (err) {
-      setError(err.message || 'Unable to reset your password. Please try again.');
+      if (err.payload?.errors && Array.isArray(err.payload.errors)) {
+        setError(err.payload.errors.map((e) => e.message).join(', '));
+      } else {
+        setError(err.message || 'Unable to reset your password. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

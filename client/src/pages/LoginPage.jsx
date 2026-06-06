@@ -20,7 +20,11 @@ const LoginPage = () => {
       await login(form);
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err.message || 'Unable to sign in');
+      if (err.payload?.errors && Array.isArray(err.payload.errors)) {
+        setError(err.payload.errors.map((e) => e.message).join(', '));
+      } else {
+        setError(err.message || 'Unable to sign in');
+      }
     } finally {
       setLoading(false);
     }
