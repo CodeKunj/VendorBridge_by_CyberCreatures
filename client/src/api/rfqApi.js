@@ -2,7 +2,10 @@ import { request } from './httpClient';
 
 export const rfqApi = {
   list: (params = {}) => {
-    const query = new URLSearchParams(params).toString();
+    const filteredParams = Object.fromEntries(
+      Object.entries(params).filter(([, value]) => value !== '' && value !== null && value !== undefined),
+    );
+    const query = new URLSearchParams(filteredParams).toString();
     return request(`/rfqs${query ? `?${query}` : ''}`, { method: 'GET' });
   },
   getById: (id) => request(`/rfqs/${id}`, { method: 'GET' }),
