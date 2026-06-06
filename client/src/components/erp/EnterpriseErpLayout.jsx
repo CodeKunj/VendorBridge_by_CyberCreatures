@@ -19,7 +19,8 @@ import {
   Receipt,
   BarChart3,
   History,
-  Settings
+  Settings,
+  UserCog,
 } from 'lucide-react';
 
 const defaultNavItems = [
@@ -32,8 +33,9 @@ const defaultNavItems = [
   { id: 'vendors', label: 'Vendors', icon: Users },
   { id: 'invoices', label: 'Invoices', icon: Receipt },
   { id: 'reports', label: 'Reports', icon: BarChart3 },
-  { id: 'activity-logs', label: 'Activity Logs', icon: History, adminOnly: true },
-  { id: 'settings', label: 'Settings', icon: Settings, adminOnly: true },
+  { id: 'activity-logs',    label: 'Activity Logs',    icon: History,  adminOnly: true },
+  { id: 'user-management',  label: 'User Management',  icon: UserCog,  adminOnly: true },
+  { id: 'settings',         label: 'Settings',          icon: Settings, adminOnly: true },
 ];
 
 const EnterpriseErpLayout = ({
@@ -72,7 +74,7 @@ const EnterpriseErpLayout = ({
 
     // Define exact allowed menu items per role
     const roleAllowedItems = {
-      admin: ['dashboard', 'vendors', 'rfqs', 'compare', 'approvals', 'purchase-orders', 'invoices', 'reports', 'activity-logs', 'settings'],
+      admin: ['dashboard', 'vendors', 'rfqs', 'compare', 'approvals', 'purchase-orders', 'invoices', 'reports', 'activity-logs', 'user-management', 'settings'],
       procurement_officer: ['dashboard', 'vendors', 'rfqs', 'compare', 'purchase-orders', 'invoices'],
       manager: ['dashboard', 'vendors', 'compare', 'approvals', 'purchase-orders', 'invoices', 'reports'],
       vendor: ['vendor-portal', 'purchase-orders'],
