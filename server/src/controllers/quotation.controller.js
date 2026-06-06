@@ -1,6 +1,29 @@
 const supabase = require('../config/db');
 const { sendSuccess, sendError, sendPaginated } = require('../utils/response');
 const { getPagination } = require('../utils/paginate');
+const { uploadQuotationAttachment, removeQuotationAttachment } = require('../utils/quotationsStorage');
+
+const quotationColumns = `*, rfqs(rfq_number, title, deadline, status), vendors(company_name, vendor_code), quotation_items(*), quotation_attachments(*)`;
+
+const parseJsonField = (value, fallback = []) => {
+  if (value === undefined || value === null || value === '') {
+    return fallback;
+  }
+
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      return fallback;
+    }
+  }
+
+  return fallback;
+};
 
 exports.list = async (req, res, next) => {
   try {
@@ -10,7 +33,7 @@ exports.list = async (req, res, next) => {
 
     let query = supabase
       .from('quotations')
-      .select(`*, rfqs(rfq_number, title), vendors(company_name, vendor_code), quotation_items(*)`, { count: 'exact' })
+      .select(quotationColumns, { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(from, to);
 
@@ -33,7 +56,7 @@ exports.getById = async (req, res, next) => {
   try {
     const { data, error } = await supabase
       .from('quotations')
-      .select(`*, rfqs(*), vendors(*), quotation_items(*)`)
+      .select(quotationColumns)
       .eq('id', req.params.id)
       .single();
 
@@ -44,8 +67,10 @@ exports.getById = async (req, res, next) => {
 
 exports.create = async (req, res, next) => {
   try {
-    const { rfq_id, total_amount, delivery_days, notes, items = [] } = req.body;
+    const { rfq_id, total_amount, delivery_days, notes } = req.body;
+    const items = parseJsonField(req.body.items, []);
     const user = req.user;
+    const files = req.files || [];
 
     const { data: vendor } = await supabase.from('vendors').select('id').eq('user_id', user.id).single();
     if (!vendor) return sendError(res, 400, 'No vendor profile linked to your account');
@@ -77,6 +102,25 @@ exports.create = async (req, res, next) => {
       await supabase.from('quotation_items').insert(items.map(item => ({ ...item, quotation_id: quotation.id })));
     }
 
+    if (files.length > 0) {
+      const attachments = [];
+
+      for (const file of files) {
+        attachments.push(await uploadQuotationAttachment(file));
+      }
+
+      await supabase.from('quotation_attachments').insert(
+        attachments.map((attachment) => ({
+          quotation_id: quotation.id,
+          file_name: attachment.fileName,
+          file_path: attachment.filePath,
+          file_url: attachment.fileUrl,
+          mime_type: attachment.mimeType,
+          file_size: attachment.fileSize,
+        }))
+      );
+    }
+
     // Notify procurement officers
     const { data: officers } = await supabase.from('users').select('id').eq('role', 'procurement_officer').eq('status', 'active');
     if (officers?.length > 0) {
@@ -98,12 +142,16 @@ exports.create = async (req, res, next) => {
 
 exports.update = async (req, res, next) => {
   try {
-    const { total_amount, delivery_days, notes, items } = req.body;
+    const { total_amount, delivery_days, notes } = req.body;
+    const items = req.body.items !== undefined ? parseJsonField(req.body.items, []) : null;
     const user = req.user;
 
-    const { data: existing } = await supabase.from('quotations').select('*, rfqs(deadline)').eq('id', req.params.id).single();
+    const { data: existing } = await supabase.from('quotations').select('*, rfqs(deadline), quotation_attachments(*), vendors(user_id)').eq('id', req.params.id).single();
     if (!existing) return sendError(res, 404, 'Quotation not found');
+    if (existing.vendors?.user_id !== user.id) return sendError(res, 403, 'You can only edit your own quotation');
     if (new Date(existing.rfqs.deadline) < new Date()) return sendError(res, 400, 'Cannot edit after deadline');
+
+    const files = req.files || [];
 
     const { data, error } = await supabase
       .from('quotations')
@@ -114,11 +162,30 @@ exports.update = async (req, res, next) => {
 
     if (error) throw error;
 
-    if (items) {
+    if (items !== null) {
       await supabase.from('quotation_items').delete().eq('quotation_id', data.id);
       if (items.length > 0) {
         await supabase.from('quotation_items').insert(items.map(i => ({ ...i, quotation_id: data.id })));
       }
+    }
+
+    if (files.length > 0) {
+      const attachments = [];
+
+      for (const file of files) {
+        attachments.push(await uploadQuotationAttachment(file));
+      }
+
+      await supabase.from('quotation_attachments').insert(
+        attachments.map((attachment) => ({
+          quotation_id: data.id,
+          file_name: attachment.fileName,
+          file_path: attachment.filePath,
+          file_url: attachment.fileUrl,
+          mime_type: attachment.mimeType,
+          file_size: attachment.fileSize,
+        }))
+      );
     }
 
     return sendSuccess(res, 200, 'Quotation updated', data);

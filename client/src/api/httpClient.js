@@ -3,10 +3,13 @@ const API_BASE_URL = import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:50
 const getAccessToken = () => localStorage.getItem('vendorbridge.accessToken');
 
 const request = async (path, options = {}) => {
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(options.headers || {}),
-  };
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+  const headers = isFormData
+    ? { ...(options.headers || {}) }
+    : {
+        'Content-Type': 'application/json',
+        ...(options.headers || {}),
+      };
 
   const token = getAccessToken();
 
