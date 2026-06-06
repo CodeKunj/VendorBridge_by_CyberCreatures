@@ -114,6 +114,7 @@ const ReportsPage = () => {
   return (
     <EnterpriseErpLayout
       user={user}
+      activeNavId="reports"
       onNavigate={handleNavigate}
       onLogout={async () => {
         await logout();

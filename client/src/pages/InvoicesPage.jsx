@@ -228,6 +228,7 @@ const InvoicesPage = () => {
   return (
     <EnterpriseErpLayout
       user={user}
+      activeNavId="invoices"
       onNavigate={handleNavigate}
       onLogout={async () => {
         await logout();

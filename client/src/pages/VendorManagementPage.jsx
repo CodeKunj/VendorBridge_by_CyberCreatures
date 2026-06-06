@@ -160,6 +160,7 @@ const VendorManagementPage = () => {
   return (
     <EnterpriseErpLayout
       user={user}
+      activeNavId="vendors"
       onNavigate={handleNavigate}
       onLogout={handleLogout}
       onProfile={() => navigate('/dashboard')}

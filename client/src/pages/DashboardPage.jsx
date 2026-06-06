@@ -328,6 +328,7 @@ const DashboardPage = () => {
       `}</style>
       <EnterpriseErpLayout
         user={user}
+        activeNavId="dashboard"
         notifications={notifications}
         breadcrumbs={breadcrumbs}
         onNavigate={handleNavigate}

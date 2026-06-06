@@ -205,6 +205,7 @@ const VendorPortalPage = () => {
   return (
     <EnterpriseErpLayout
       user={user}
+      activeNavId="vendor-portal"
       onNavigate={handleNavigate}
       onLogout={handleLogout}
       onProfile={() => navigate('/vendor-portal')}

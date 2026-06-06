@@ -205,6 +205,7 @@ const RfqManagementPage = () => {
   return (
     <EnterpriseErpLayout
       user={user}
+      activeNavId="rfqs"
       onNavigate={handleNavigate}
       onLogout={handleLogout}
       onProfile={() => navigate('/dashboard')}
