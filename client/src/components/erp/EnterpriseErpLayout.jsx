@@ -11,6 +11,7 @@ const defaultNavItems = [
   { id: 'rfqs', label: 'RFQs', caption: 'Requests for quotation', icon: 'Q' },
   { id: 'compare', label: 'Compare Bids', caption: 'Quotation compare matrix', icon: 'C' },
   { id: 'approvals', label: 'Approvals', caption: 'Workflow approvals', icon: 'A' },
+  { id: 'purchase-orders', label: 'Purchase Orders', caption: 'Official PO documents', icon: 'PO' },
   { id: 'vendors', label: 'Vendors', caption: 'Supplier records', icon: 'V' },
   { id: 'invoices', label: 'Invoices', caption: 'Billing operations', icon: 'I' },
   { id: 'reports', label: 'Reports', caption: 'Analytics and exports', icon: 'R' },

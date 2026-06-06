@@ -1,4 +1,4 @@
-import { request } from './httpClient';
+import { request, API_BASE_URL } from './httpClient';
 
 export const erpApi = {
   // Users
@@ -73,7 +73,7 @@ export const erpApi = {
     getById: (id) => request(`/purchase-orders/${id}`, { method: 'GET' }),
     create: (body) => request('/purchase-orders', { method: 'POST', body: JSON.stringify(body) }),
     updateStatus: (id, status) => request(`/purchase-orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
-    downloadPdfUrl: (id) => `http://localhost:5000/api/purchase-orders/${id}/pdf`,
+    downloadPdfUrl: (id) => `${API_BASE_URL}/purchase-orders/${id}/pdf`,
   },
 
   // Invoices
@@ -86,7 +86,7 @@ export const erpApi = {
     create: (body) => request('/invoices', { method: 'POST', body: JSON.stringify(body) }),
     updateStatus: (id, status) => request(`/invoices/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
     sendEmail: (id) => request(`/invoices/${id}/send-email`, { method: 'POST' }),
-    downloadPdfUrl: (id) => `http://localhost:5000/api/invoices/${id}/pdf`,
+    downloadPdfUrl: (id) => `${API_BASE_URL}/invoices/${id}/pdf`,
   },
 
   // Reports
