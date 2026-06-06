@@ -63,6 +63,7 @@ const css = {
   heroTitle: {
     margin: 0, fontSize: 28, fontWeight: 700,
     letterSpacing: '-0.02em', lineHeight: 1.25,
+    color: "#fff",
   },
   heroSub: {
     margin: '6px 0 0', fontSize: 14, opacity: 0.82, lineHeight: 1.5,
