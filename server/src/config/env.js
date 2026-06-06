@@ -30,7 +30,7 @@ const schema = Joi.object({
   SUPABASE_STORAGE_BUCKET: Joi.string().allow('').default('vendorbridge-files'),
   AI_SERVICE_URL: Joi.string().uri().allow('').default('http://localhost:8000'),
   AI_SERVICE_SECRET: Joi.string().allow(''),
-  AI_MODEL: Joi.string().allow('').default('gemini-2.0-flash'),
+  AI_MODEL: Joi.string().allow('').default('gemini-flash-latest'),
   AI_TEMPERATURE: Joi.number().min(0).max(2).default(0.4),
   AI_MAX_TOKENS: Joi.number().integer().min(256).max(8192).default(1024),
   GEMINI_API_KEY: Joi.string().allow(''),
