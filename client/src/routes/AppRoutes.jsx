@@ -19,6 +19,7 @@ import QuotationComparisonPage from '../pages/QuotationComparisonPage';
 import ApprovalWorkflowPage from '../pages/ApprovalWorkflowPage';
 import PurchaseOrdersPage from '../pages/PurchaseOrdersPage';
 import ActivityLogsPage from '../pages/ActivityLogsPage';
+import ProfilePage from '../pages/ProfilePage';
 import { useAuth } from '../context/AuthContext';
 
 const RoleAwareRedirect = () => {
@@ -51,6 +52,7 @@ const AppRoutes = () => (
     <Route path="/reports" element={<ProtectedRoute allowedRoles={['admin', 'manager']}><ReportsPage /></ProtectedRoute>} />
     <Route path="/settings" element={<ProtectedRoute allowedRoles={['admin']}><SettingsPage /></ProtectedRoute>} />
     <Route path="/activity-logs" element={<ProtectedRoute allowedRoles={['admin']}><ActivityLogsPage /></ProtectedRoute>} />
+    <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
     
     {/* Auth routes */}
     <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />

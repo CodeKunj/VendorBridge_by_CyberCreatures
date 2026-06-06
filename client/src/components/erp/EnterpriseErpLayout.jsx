@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './erp-layout.css';
 import Sidebar from './Sidebar';
 import TopNavbar from './TopNavbar';
@@ -46,6 +47,7 @@ const EnterpriseErpLayout = ({
   onSettings,
   children,
 }) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -145,8 +147,8 @@ const EnterpriseErpLayout = ({
             onToggleSidebar={() => setSidebarOpen((value) => !value)}
             onToggleNotifications={() => setNotificationsOpen((value) => !value)}
             onLogout={onLogout}
-            onProfile={onProfile}
-            onSettings={onSettings}
+            onProfile={() => navigate('/profile')}
+            onSettings={() => navigate('/settings')}
             notificationCount={unreadCount}
           />
 
