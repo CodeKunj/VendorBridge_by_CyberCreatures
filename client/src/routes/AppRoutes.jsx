@@ -29,28 +29,28 @@ const RoleAwareRedirect = () => {
 const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<ProtectedRoute><RoleAwareRedirect /></ProtectedRoute>} />
-    <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+    <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['admin', 'procurement_officer', 'manager']}><DashboardPage /></ProtectedRoute>} />
     
     {/* Vendor directories */}
-    <Route path="/vendors" element={<ProtectedRoute><VendorManagementPage /></ProtectedRoute>} />
-    <Route path="/vendor-directory" element={<ProtectedRoute><VendorsPage /></ProtectedRoute>} />
+    <Route path="/vendors" element={<ProtectedRoute allowedRoles={['admin', 'procurement_officer', 'manager']}><VendorManagementPage /></ProtectedRoute>} />
+    <Route path="/vendor-directory" element={<ProtectedRoute allowedRoles={['admin', 'procurement_officer', 'manager']}><VendorsPage /></ProtectedRoute>} />
     
     {/* RFQ & Procurement */}
-    <Route path="/rfqs" element={<ProtectedRoute><RfqManagementPage /></ProtectedRoute>} />
-    <Route path="/procurement" element={<ProtectedRoute><ProcurementPage /></ProtectedRoute>} />
-    <Route path="/vendor-portal" element={<ProtectedRoute><VendorPortalPage /></ProtectedRoute>} />
-    <Route path="/compare" element={<ProtectedRoute><QuotationComparisonPage /></ProtectedRoute>} />
-    <Route path="/compare/:rfqId" element={<ProtectedRoute><QuotationComparisonPage /></ProtectedRoute>} />
+    <Route path="/rfqs" element={<ProtectedRoute allowedRoles={['admin', 'procurement_officer']}><RfqManagementPage /></ProtectedRoute>} />
+    <Route path="/procurement" element={<ProtectedRoute allowedRoles={['admin', 'procurement_officer']}><ProcurementPage /></ProtectedRoute>} />
+    <Route path="/vendor-portal" element={<ProtectedRoute allowedRoles={['vendor']}><VendorPortalPage /></ProtectedRoute>} />
+    <Route path="/compare" element={<ProtectedRoute allowedRoles={['admin', 'procurement_officer', 'manager']}><QuotationComparisonPage /></ProtectedRoute>} />
+    <Route path="/compare/:rfqId" element={<ProtectedRoute allowedRoles={['admin', 'procurement_officer', 'manager']}><QuotationComparisonPage /></ProtectedRoute>} />
     
     {/* Workflow Approvals */}
-    <Route path="/approvals" element={<ProtectedRoute><ApprovalWorkflowPage /></ProtectedRoute>} />
+    <Route path="/approvals" element={<ProtectedRoute allowedRoles={['admin', 'manager']}><ApprovalWorkflowPage /></ProtectedRoute>} />
     
     {/* Billing & System admin */}
-    <Route path="/purchase-orders" element={<ProtectedRoute><PurchaseOrdersPage /></ProtectedRoute>} />
-    <Route path="/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
-    <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
-    <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-    <Route path="/activity-logs" element={<ProtectedRoute><ActivityLogsPage /></ProtectedRoute>} />
+    <Route path="/purchase-orders" element={<ProtectedRoute allowedRoles={['admin', 'procurement_officer', 'manager', 'vendor']}><PurchaseOrdersPage /></ProtectedRoute>} />
+    <Route path="/invoices" element={<ProtectedRoute allowedRoles={['admin', 'procurement_officer', 'manager']}><InvoicesPage /></ProtectedRoute>} />
+    <Route path="/reports" element={<ProtectedRoute allowedRoles={['admin', 'manager']}><ReportsPage /></ProtectedRoute>} />
+    <Route path="/settings" element={<ProtectedRoute allowedRoles={['admin']}><SettingsPage /></ProtectedRoute>} />
+    <Route path="/activity-logs" element={<ProtectedRoute allowedRoles={['admin']}><ActivityLogsPage /></ProtectedRoute>} />
     
     {/* Auth routes */}
     <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
