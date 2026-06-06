@@ -235,6 +235,7 @@ const RfqManagementPage = () => {
                     <td style={{ padding: '12px' }}>{rfq.rfq_attachments?.length || 0}</td>
                     <td style={{ padding: '12px' }}>{rfq.status}</td>
                     <td style={{ padding: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <button className="erp-icon-button" type="button" onClick={() => navigate(`/compare/${rfq.id}`)}>Compare</button>
                       <button className="erp-icon-button" type="button" onClick={() => openEdit(rfq)}>Edit</button>
                       <button className="erp-icon-button" type="button" onClick={() => publishRfq(rfq.id)}>Publish</button>
                       <button className="erp-icon-button" type="button" onClick={() => closeRfq(rfq.id)}>Close</button>

@@ -9,6 +9,7 @@ const defaultNavItems = [
   { id: 'dashboard', label: 'Dashboard', caption: 'Overview and KPIs', icon: 'D' },
   { id: 'vendor-portal', label: 'Vendor Portal', caption: 'Assigned RFQs and quotations', icon: 'VP' },
   { id: 'rfqs', label: 'RFQs', caption: 'Requests for quotation', icon: 'Q' },
+  { id: 'compare', label: 'Compare Bids', caption: 'Quotation compare matrix', icon: 'C' },
   { id: 'vendors', label: 'Vendors', caption: 'Supplier records', icon: 'V' },
   { id: 'invoices', label: 'Invoices', caption: 'Billing operations', icon: 'I' },
   { id: 'reports', label: 'Reports', caption: 'Analytics and exports', icon: 'R' },

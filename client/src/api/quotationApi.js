@@ -9,4 +9,5 @@ export const quotationApi = {
   create: (formData) => request('/quotations', { method: 'POST', body: formData, headers: {} }),
   update: (id, formData) => request(`/quotations/${id}`, { method: 'PUT', body: formData, headers: {} }),
   withdraw: (id) => request(`/quotations/${id}/withdraw`, { method: 'POST' }),
+  compare: (rfqId) => request(`/quotations/compare/${rfqId}`, { method: 'GET' }),
 };
