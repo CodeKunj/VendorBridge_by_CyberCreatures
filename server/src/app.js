@@ -59,4 +59,10 @@ app.use('*', (req, res) => {
 // ─── Global Error Handler ────────────────────────────────────────────────────
 app.use(errorHandler);
 
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Welcome to VendorBridge API',
+  });
+});
+
 module.exports = app;
