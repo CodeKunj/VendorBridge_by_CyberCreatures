@@ -16,6 +16,7 @@ import {
   Eye, 
   AlertCircle 
 } from 'lucide-react';
+import { formatCurrency } from '../utils/currency';
 
 const ProcurementPage = () => {
   const { user, logout } = useAuth();
@@ -103,8 +104,21 @@ const ProcurementPage = () => {
     setSubmittedQuotations([]);
     try {
       const res = await erpApi.rfqs.getById(rfq.id);
-      setRfqItems(res.items || []);
-      setAssignedVendors(res.assignedVendors || []);
+      const rfqData = res.data || {};
+      
+      const items = (rfqData.rfq_items || []).map(item => ({
+        id: item.id,
+        item_name: item.item_name || item.product_name || '',
+        description: item.description || item.notes || '',
+        quantity: item.quantity || 1,
+        uom: item.uom || item.unit || 'units'
+      }));
+      setRfqItems(items);
+
+      const vendorsAssigned = (rfqData.rfq_vendor_assignments || [])
+        .map(assign => assign.vendors)
+        .filter(Boolean);
+      setAssignedVendors(vendorsAssigned);
 
       if (isProcurement || isManager) {
         const qRes = await erpApi.quotations.list({ rfq_id: rfq.id });
@@ -185,7 +199,12 @@ const ProcurementPage = () => {
       });
       fetchInitialData();
     } catch (err) {
-      setError(err.message || 'Failed to create RFQ');
+      if (err.payload && err.payload.errors) {
+        const details = err.payload.errors.map((e) => `${e.field}: ${e.message}`).join(', ');
+        setError(`Validation failed - ${details}`);
+      } else {
+        setError(err.message || 'Failed to create RFQ');
+      }
     }
   };
 
@@ -594,7 +613,7 @@ const ProcurementPage = () => {
                                 {submittedQuotations.map(quote => (
                                   <tr key={quote.id}>
                                     <td>Quote Bid</td>
-                                    <td><strong>${quote.total_amount}</strong></td>
+                                    <td><strong>{formatCurrency(quote.total_amount)}</strong></td>
                                     <td>{quote.delivery_days} days</td>
                                     <td>
                                       <span className={`erp-badge erp-badge--${
@@ -640,7 +659,7 @@ const ProcurementPage = () => {
                                 <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '10px', borderRadius: '8px' }}>
                                   <div style={{ fontSize: '0.72rem', color: '#047857', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}><TrendingUp size={12} /> CHEAPEST BID</div>
                                   <div style={{ fontSize: '1rem', fontWeight: 700, marginTop: '2px', color: '#064e3b' }}>
-                                    ${comparison.cheapest?.total_amount}
+                                    {formatCurrency(comparison.cheapest?.total_amount)}
                                   </div>
                                   <div style={{ fontSize: '0.72rem', color: '#047857' }}>
                                     {comparison.cheapest?.delivery_days} days delivery
@@ -652,7 +671,7 @@ const ProcurementPage = () => {
                                     {comparison.fastest?.delivery_days} Days
                                   </div>
                                   <div style={{ fontSize: '0.72rem', color: '#1d4ed8' }}>
-                                    Cost: ${comparison.fastest?.total_amount}
+                                    Cost: {formatCurrency(comparison.fastest?.total_amount)}
                                   </div>
                                 </div>
                               </div>
@@ -851,7 +870,7 @@ const ProcurementPage = () => {
                         <input 
                           type="text" 
                           className="erp-input"
-                          value={`$${newQuotation.items.reduce((sum, item) => sum + item.total_price, 0).toFixed(2)}`}
+                          value={formatCurrency(newQuotation.items.reduce((sum, item) => sum + item.total_price, 0))}
                           disabled 
                         />
                       </div>
@@ -874,7 +893,7 @@ const ProcurementPage = () => {
                               required
                             />
                             <div style={{ textAlign: 'right', fontWeight: 600, fontSize: '0.85rem' }}>
-                              ${item.total_price.toFixed(2)}
+                              {formatCurrency(item.total_price)}
                             </div>
                           </div>
                         ))}

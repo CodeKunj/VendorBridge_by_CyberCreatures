@@ -15,6 +15,7 @@ import {
   SlidersHorizontal, 
   FileCheck 
 } from 'lucide-react';
+import { formatCurrency } from '../utils/currency';
 
 const QuotationComparisonPage = () => {
   const { user, logout } = useAuth();
@@ -80,7 +81,7 @@ const QuotationComparisonPage = () => {
     setError('');
     try {
       const rfqRes = await rfqApi.getById(id);
-      setSelectedRfqDetails(rfqRes);
+      setSelectedRfqDetails(rfqRes.data);
 
       const quoteRes = await quotationApi.compare(id);
       setQuotes(quoteRes.data || []);
@@ -235,7 +236,7 @@ const QuotationComparisonPage = () => {
                   </div>
 
                   <div className="erp-form-group" style={{ margin: 0 }}>
-                    <label className="erp-label">Max Price ($)</label>
+                    <label className="erp-label">Max Price Ceiling</label>
                     <input
                       type="number"
                       className="erp-input"
@@ -360,7 +361,7 @@ const QuotationComparisonPage = () => {
                           <div style={{ background: 'var(--erp-surface-container)', padding: '10px', borderRadius: '8px', textAlign: 'center' }}>
                             <span style={{ fontSize: '0.75rem', color: 'var(--erp-outline)', display: 'block', fontWeight: 600 }}>Total Price</span>
                             <strong style={{ fontSize: '1.2rem', color: 'var(--erp-primary)', display: 'block', marginTop: '2px' }}>
-                              ${quote.total_amount.toFixed(2)}
+                              {formatCurrency(quote.total_amount)}
                             </strong>
                           </div>
                           <div style={{ background: 'var(--erp-surface-container)', padding: '10px', borderRadius: '8px', textAlign: 'center' }}>
@@ -377,7 +378,7 @@ const QuotationComparisonPage = () => {
                             {(quote.quotation_items || []).map((item, i) => (
                               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', borderBottom: '1px dashed var(--erp-border)', paddingBottom: '4px' }}>
                                 <span>{item.item_name || `Item ${i+1}`} ({item.quantity} units)</span>
-                                <strong>${(item.unit_price || 0).toFixed(2)} / unit</strong>
+                                <strong>{formatCurrency(item.unit_price || 0)} / unit</strong>
                               </div>
                             ))}
                           </div>

@@ -16,6 +16,7 @@ import {
   Phone,
   DollarSign
 } from 'lucide-react';
+import { formatCurrency } from '../utils/currency';
 
 const PurchaseOrdersPage = () => {
   const { user, logout } = useAuth();
@@ -270,7 +271,7 @@ const PurchaseOrdersPage = () => {
                           <td><strong>{po.po_number}</strong></td>
                           <td>{po.rfqs?.rfq_number || '-'}</td>
                           <td>{po.vendors?.company_name || 'N/A'}</td>
-                          <td><strong>${parseFloat(po.total_amount || 0).toFixed(2)}</strong></td>
+                          <td><strong>{formatCurrency(po.total_amount)}</strong></td>
                           <td>
                             {po.issued_at ? new Date(po.issued_at).toLocaleDateString() : new Date(po.created_at).toLocaleDateString()}
                           </td>
@@ -366,8 +367,8 @@ const PurchaseOrdersPage = () => {
                         <tr style={{ background: 'var(--erp-surface-container-low)', borderBottom: '1px solid var(--erp-border)', textAlign: 'left' }}>
                           <th style={{ padding: '8px' }}>Item</th>
                           <th style={{ padding: '8px', textAlign: 'right' }}>Qty</th>
-                          <th style={{ padding: '8px', textAlign: 'right' }}>Unit ($)</th>
-                          <th style={{ padding: '8px', textAlign: 'right' }}>Total ($)</th>
+                          <th style={{ padding: '8px', textAlign: 'right' }}>Unit</th>
+                          <th style={{ padding: '8px', textAlign: 'right' }}>Total</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -378,8 +379,8 @@ const PurchaseOrdersPage = () => {
                               <div style={{ fontSize: '0.72rem', color: 'var(--erp-outline)' }}>{item.description}</div>
                             </td>
                             <td style={{ padding: '8px', textAlign: 'right' }}>{item.quantity}</td>
-                            <td style={{ padding: '8px', textAlign: 'right' }}>${parseFloat(item.unit_price || 0).toFixed(2)}</td>
-                            <td style={{ padding: '8px', textAlign: 'right' }}>${parseFloat(item.total_price || 0).toFixed(2)}</td>
+                            <td style={{ padding: '8px', textAlign: 'right' }}>{formatCurrency(item.unit_price)}</td>
+                            <td style={{ padding: '8px', textAlign: 'right' }}>{formatCurrency(item.total_price)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -389,7 +390,7 @@ const PurchaseOrdersPage = () => {
                       <div style={{ textAlign: 'right' }}>
                         <span style={{ color: 'var(--erp-outline)', fontSize: '0.82rem' }}>Total Amount:</span>
                         <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--erp-primary)', marginTop: '2px' }}>
-                          ${parseFloat(selectedPoDetails.total_amount || 0).toFixed(2)}
+                          {formatCurrency(selectedPoDetails.total_amount)}
                         </div>
                       </div>
                     </div>
@@ -449,7 +450,7 @@ const PurchaseOrdersPage = () => {
                       .filter(q => q.rfq_id === selectedRfqId)
                       .map(q => (
                         <option key={q.id} value={q.id}>
-                          Bid by {q.vendors?.company_name} - ${parseFloat(q.total_amount).toFixed(2)} ({q.status})
+                          Bid by {q.vendors?.company_name} - {formatCurrency(q.total_amount)} ({q.status})
                         </option>
                       ))
                     }
@@ -457,7 +458,7 @@ const PurchaseOrdersPage = () => {
                 </div>
 
                 <div className="erp-form-group">
-                  <label className="erp-label">Total Amount ($)</label>
+                  <label className="erp-label">Total Amount</label>
                   <input 
                     type="number" 
                     className="erp-input" 

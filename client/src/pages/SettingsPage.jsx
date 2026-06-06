@@ -22,6 +22,12 @@ const SettingsPage = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (user && user.role !== 'admin') {
+      navigate(user.role === 'vendor' ? '/vendor-portal' : '/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
+
   // Primary Tabs: 'config' | 'audit'
   const [activeTab, setActiveTab] = useState('config');
   // Config Section Tabs
@@ -75,6 +81,7 @@ const SettingsPage = () => {
   const [sendingEmail, setSendingEmail] = useState(false);
 
   const fetchSettings = async () => {
+    if (!user || user.role !== 'admin') return;
     setLoading(true);
     setError('');
     try {
@@ -164,6 +171,18 @@ const SettingsPage = () => {
   const handleNavigate = (item) => {
     navigate(item.id === 'dashboard' ? '/dashboard' : `/${item.id}`);
   };
+
+  if (!user) {
+    return (
+      <div style={{ textAlign: 'center', padding: '50px' }}>
+        <span className="erp-spinner" />
+      </div>
+    );
+  }
+
+  if (user.role !== 'admin') {
+    return null;
+  }
 
   return (
     <EnterpriseErpLayout

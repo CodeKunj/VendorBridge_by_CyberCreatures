@@ -14,6 +14,7 @@ import {
   Receipt,
   DollarSign
 } from 'lucide-react';
+import { formatCurrency } from '../utils/currency';
 
 const InvoicesPage = () => {
   const { user, logout } = useAuth();
@@ -298,7 +299,7 @@ const InvoicesPage = () => {
                           >
                             <td><strong>{po.po_number}</strong></td>
                             <td>{new Date(po.created_at).toLocaleDateString()}</td>
-                            <td><strong>${parseFloat(po.total_amount || 0).toFixed(2)}</strong></td>
+                            <td><strong>{formatCurrency(po.total_amount)}</strong></td>
                             <td>
                               <span className={`erp-badge erp-badge--${
                                 po.status === 'issued' ? 'info' :
@@ -343,7 +344,7 @@ const InvoicesPage = () => {
                           >
                             <td><strong>{inv.invoice_number}</strong></td>
                             <td>{new Date(inv.due_date).toLocaleDateString()}</td>
-                            <td><strong>${parseFloat(inv.total_amount || 0).toFixed(2)}</strong></td>
+                            <td><strong>{formatCurrency(inv.total_amount)}</strong></td>
                             <td>
                               <span className={`erp-badge erp-badge--${
                                 inv.status === 'paid' ? 'success' :
@@ -446,8 +447,8 @@ const InvoicesPage = () => {
                         <tr style={{ background: 'var(--erp-surface-container-low)', borderBottom: '1px solid var(--erp-border)', textAlign: 'left' }}>
                           <th style={{ padding: '8px' }}>Item</th>
                           <th style={{ padding: '8px', textAlign: 'right' }}>Qty</th>
-                          <th style={{ padding: '8px', textAlign: 'right' }}>Unit ($)</th>
-                          <th style={{ padding: '8px', textAlign: 'right' }}>Total ($)</th>
+                          <th style={{ padding: '8px', textAlign: 'right' }}>Unit</th>
+                          <th style={{ padding: '8px', textAlign: 'right' }}>Total</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -455,8 +456,8 @@ const InvoicesPage = () => {
                           <tr key={idx} style={{ borderBottom: '1px solid var(--erp-border)' }}>
                             <td style={{ padding: '8px' }}>{item.item_name}</td>
                             <td style={{ padding: '8px', textAlign: 'right' }}>{item.quantity}</td>
-                            <td style={{ padding: '8px', textAlign: 'right' }}>${parseFloat(item.unit_price || 0).toFixed(2)}</td>
-                            <td style={{ padding: '8px', textAlign: 'right' }}>${parseFloat(item.total_price || 0).toFixed(2)}</td>
+                            <td style={{ padding: '8px', textAlign: 'right' }}>{formatCurrency(item.unit_price)}</td>
+                            <td style={{ padding: '8px', textAlign: 'right' }}>{formatCurrency(item.total_price)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -466,7 +467,7 @@ const InvoicesPage = () => {
                       <div style={{ marginLeft: 'auto' }}>
                         <span style={{ color: 'var(--erp-outline)', fontSize: '0.82rem' }}>Total Amount:</span>
                         <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--erp-primary)' }}>
-                          ${parseFloat(selectedPo.total_amount || 0).toFixed(2)}
+                          {formatCurrency(selectedPo.total_amount)}
                         </div>
                       </div>
                     </div>
@@ -535,8 +536,8 @@ const InvoicesPage = () => {
                         <tr style={{ background: 'var(--erp-surface-container-low)', borderBottom: '1px solid var(--erp-border)', textAlign: 'left' }}>
                           <th style={{ padding: '8px' }}>Item</th>
                           <th style={{ padding: '8px', textAlign: 'right' }}>Qty</th>
-                          <th style={{ padding: '8px', textAlign: 'right' }}>Unit ($)</th>
-                          <th style={{ padding: '8px', textAlign: 'right' }}>Total ($)</th>
+                          <th style={{ padding: '8px', textAlign: 'right' }}>Unit</th>
+                          <th style={{ padding: '8px', textAlign: 'right' }}>Total</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -544,8 +545,8 @@ const InvoicesPage = () => {
                           <tr key={idx} style={{ borderBottom: '1px solid var(--erp-border)' }}>
                             <td style={{ padding: '8px' }}>{item.item_name}</td>
                             <td style={{ padding: '8px', textAlign: 'right' }}>{item.quantity}</td>
-                            <td style={{ padding: '8px', textAlign: 'right' }}>${parseFloat(item.unit_price || 0).toFixed(2)}</td>
-                            <td style={{ padding: '8px', textAlign: 'right' }}>${parseFloat(item.total_price || 0).toFixed(2)}</td>
+                            <td style={{ padding: '8px', textAlign: 'right' }}>{formatCurrency(item.unit_price)}</td>
+                            <td style={{ padding: '8px', textAlign: 'right' }}>{formatCurrency(item.total_price)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -554,17 +555,17 @@ const InvoicesPage = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', borderTop: '2px solid var(--erp-border)', paddingTop: '10px', fontSize: '0.82rem' }}>
                       <div style={{ display: 'grid', gridTemplateColumns: '120px 80px', gap: '4px', textAlign: 'right' }}>
                         <span>Subtotal:</span>
-                        <strong>${parseFloat(selectedInvoice.subtotal || 0).toFixed(2)}</strong>
+                        <strong>{formatCurrency(selectedInvoice.subtotal)}</strong>
 
                         <span>CGST (9.0%):</span>
-                        <span>${parseFloat((selectedInvoice.tax_amount || 0) / 2).toFixed(2)}</span>
+                        <span>{formatCurrency((selectedInvoice.tax_amount || 0) / 2)}</span>
 
                         <span>SGST (9.0%):</span>
-                        <span>${parseFloat((selectedInvoice.tax_amount || 0) / 2).toFixed(2)}</span>
+                        <span>{formatCurrency((selectedInvoice.tax_amount || 0) / 2)}</span>
 
                         <span style={{ fontSize: '0.9rem', fontWeight: 'bold', marginTop: '6px' }}>Total Amount:</span>
-                        <strong style={{ fontSize: '0.9rem', color: 'var(--erp-primary)', marginTop: '6px' }}>
-                          ${parseFloat(selectedInvoice.total_amount || 0).toFixed(2)}
+                        <strong style={{ fontSize: '1.1rem', color: 'var(--erp-primary)', marginTop: '6px' }}>
+                          {formatCurrency(selectedInvoice.total_amount)}
                         </strong>
                       </div>
                     </div>
@@ -624,7 +625,7 @@ const InvoicesPage = () => {
 
                     <div className="erp-grid-2">
                       <div className="erp-form-group">
-                        <label className="erp-label">Subtotal Amount ($)</label>
+                        <label className="erp-label">Subtotal Amount (₹)</label>
                         <input 
                           type="number" 
                           className="erp-input"
@@ -637,7 +638,7 @@ const InvoicesPage = () => {
                         />
                       </div>
                       <div className="erp-form-group">
-                        <label className="erp-label">Tax / GST (18%) ($)</label>
+                        <label className="erp-label">Tax / GST (18%) (₹)</label>
                         <input 
                           type="number" 
                           className="erp-input"
@@ -660,11 +661,11 @@ const InvoicesPage = () => {
                         />
                       </div>
                       <div className="erp-form-group">
-                        <label className="erp-label">Total Bill Amount ($)</label>
+                        <label className="erp-label">Total Bill Amount (₹)</label>
                         <input 
                           type="text" 
                           className="erp-input"
-                          value={`$${(parseFloat(newInvoice.subtotal) + parseFloat(newInvoice.tax_amount)).toFixed(2)}`}
+                          value={formatCurrency(parseFloat(newInvoice.subtotal) + parseFloat(newInvoice.tax_amount))}
                           disabled 
                         />
                       </div>

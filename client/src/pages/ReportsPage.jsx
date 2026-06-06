@@ -14,6 +14,7 @@ import {
   FileText,
   PieChart as PieChartIcon
 } from 'lucide-react';
+import { formatCurrency } from '../utils/currency';
 import {
   AreaChart,
   Area,
@@ -184,7 +185,7 @@ const ReportsPage = () => {
                     <div className="erp-card__body">
                       <p className="erp-card__subtitle" style={{ marginTop: 0 }}>Total Capital Spend</p>
                       <h3 className="erp-card__title" style={{ fontSize: '1.8rem', color: 'var(--erp-primary)', fontWeight: 700 }}>
-                        ${spendingData.totalSpend?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
+                        {formatCurrency(spendingData.totalSpend)}
                       </h3>
                       <p className="erp-card__subtitle" style={{ fontSize: '0.8rem' }}>Sum of active Purchase Orders</p>
                     </div>
@@ -204,9 +205,9 @@ const ReportsPage = () => {
                     <div className="erp-card__body">
                       <p className="erp-card__subtitle" style={{ marginTop: 0 }}>Average PO Value</p>
                       <h3 className="erp-card__title" style={{ fontSize: '1.8rem', color: 'var(--erp-on-surface)', fontWeight: 700 }}>
-                        ${spendingData.allPOs?.length > 0 
-                          ? (spendingData.totalSpend / spendingData.allPOs.length).toLocaleString(undefined, { maximumFractionDigits: 0 }) 
-                          : '0'}
+                        {spendingData.allPOs?.length > 0 
+                          ? formatCurrency(spendingData.totalSpend / spendingData.allPOs.length) 
+                          : formatCurrency(0)}
                       </h3>
                       <p className="erp-card__subtitle" style={{ fontSize: '0.8rem' }}>Mean transaction cost</p>
                     </div>
@@ -234,7 +235,7 @@ const ReportsPage = () => {
                               <CartesianGrid strokeDasharray="3 3" stroke="var(--erp-outline-variant)" vertical={false} />
                               <XAxis dataKey="month" stroke="var(--erp-outline)" style={{ fontSize: '0.75rem' }} />
                               <YAxis stroke="var(--erp-outline)" style={{ fontSize: '0.75rem' }} />
-                              <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
+                              <Tooltip formatter={(value) => formatCurrency(value)} />
                               <Area type="monotone" dataKey="amount" stroke="var(--erp-primary)" strokeWidth={2} fillOpacity={1} fill="url(#spendGrad)" />
                             </AreaChart>
                           </ResponsiveContainer>
@@ -257,7 +258,7 @@ const ReportsPage = () => {
                               <CartesianGrid strokeDasharray="3 3" stroke="var(--erp-outline-variant)" vertical={false} />
                               <XAxis dataKey="name" stroke="var(--erp-outline)" style={{ fontSize: '0.75rem' }} />
                               <YAxis stroke="var(--erp-outline)" style={{ fontSize: '0.75rem' }} />
-                              <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
+                              <Tooltip formatter={(value) => formatCurrency(value)} />
                               <Bar dataKey="amount" fill="var(--erp-primary)" radius={[4, 4, 0, 0]} />
                             </BarChart>
                           </ResponsiveContainer>
@@ -290,7 +291,7 @@ const ReportsPage = () => {
                               <th style={{ textAlign: 'center' }}>Participation</th>
                               <th style={{ textAlign: 'center' }}>Win Rate</th>
                               <th style={{ textAlign: 'center' }}>Delivery Speed</th>
-                              <th>Total Spend ($)</th>
+                              <th>Total Spend</th>
                               <th style={{ textAlign: 'right' }}>Performance Score</th>
                             </tr>
                           </thead>
@@ -319,7 +320,7 @@ const ReportsPage = () => {
                                   {v.avgDeliveryDays > 0 ? `${v.avgDeliveryDays} days` : 'N/A'}
                                 </td>
                                 <td style={{ fontWeight: 600 }}>
-                                  ${v.totalSpend?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  {formatCurrency(v.totalSpend)}
                                 </td>
                                 <td style={{ textAlign: 'right' }}>
                                   <span 

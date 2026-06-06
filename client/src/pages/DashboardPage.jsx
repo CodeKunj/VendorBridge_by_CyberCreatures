@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { EnterpriseErpLayout } from '../components/erp';
 import { useAuth } from '../context/AuthContext';
 import { dashboardApi } from '../api/dashboardApi';
+import { formatCurrency, formatAxisINR } from '../utils/currency';
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell,
   Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -265,16 +266,12 @@ const CustomTooltip = ({ active, payload, label }) => {
       <p style={{ margin: '0 0 6px', fontWeight: 600, color: T.onSurface }}>{label}</p>
       {payload.map((p) => (
         <p key={p.name} style={{ margin: '2px 0', color: p.color }}>
-          {p.name}: <strong>{typeof p.value === 'number' && p.value > 1000
-            ? `$${(p.value / 1000).toFixed(1)}k` : p.value}</strong>
+          {p.name}: <strong>{typeof p.value === 'number' ? formatCurrency(p.value) : p.value}</strong>
         </p>
       ))}
     </div>
   );
 };
-
-const formatCurrency = (v) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v || 0);
 
 /* qa icons map */
 const QA_ICONS = {
@@ -425,7 +422,7 @@ const DashboardPage = () => {
                       <LineChart data={spendingSummary}>
                         <CartesianGrid strokeDasharray="3 3" stroke={T.surfaceContainer} />
                         <XAxis dataKey="month" stroke={T.outline} tick={{ fontSize: 12 }} />
-                        <YAxis tickFormatter={(v) => `$${v / 1000}k`} stroke={T.outline} tick={{ fontSize: 12 }} />
+                        <YAxis tickFormatter={formatAxisINR} stroke={T.outline} tick={{ fontSize: 12 }} />
                         <Tooltip formatter={(v) => formatCurrency(v)} content={<CustomTooltip />} />
                         <Line type="monotone" dataKey="spent" stroke={T.primary}
                           strokeWidth={3} dot={{ r: 4, fill: T.primary }} activeDot={{ r: 6 }} />

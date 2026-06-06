@@ -16,6 +16,7 @@ import {
   Paperclip,
   X 
 } from 'lucide-react';
+import { formatCurrency } from '../utils/currency';
 
 const createQuotationItem = (productName = '', quantity = '') => ({
   product_name: productName,
@@ -338,7 +339,7 @@ const VendorPortalPage = () => {
                           <div style={{ fontWeight: 600 }}>{quotation.rfqs?.rfq_number}</div>
                           <div style={{ fontSize: '0.75rem', color: 'var(--erp-outline)' }}>{quotation.rfqs?.title}</div>
                         </td>
-                        <td><strong>${parseFloat(quotation.total_amount || 0).toFixed(2)}</strong></td>
+                        <td><strong>{formatCurrency(quotation.total_amount)}</strong></td>
                         <td>{quotation.delivery_days ? `${quotation.delivery_days} days` : '-'}</td>
                         <td>
                           <span className={`erp-badge erp-badge--${
@@ -393,7 +394,7 @@ const VendorPortalPage = () => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                   <div className="erp-form-group" style={{ margin: 0 }}>
-                    <label className="erp-label">Total Bid Amount ($)</label>
+                    <label className="erp-label">Total Bid Amount</label>
                     <input 
                       className="erp-input" 
                       placeholder="e.g. 2400" 

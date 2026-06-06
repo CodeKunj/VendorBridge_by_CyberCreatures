@@ -12,6 +12,7 @@ DROP TABLE IF EXISTS public.notifications CASCADE;
 DROP TABLE IF EXISTS public.invoices CASCADE;
 DROP TABLE IF EXISTS public.purchase_orders CASCADE;
 DROP TABLE IF EXISTS public.approvals CASCADE;
+DROP TABLE IF EXISTS public.quotation_attachments CASCADE;
 DROP TABLE IF EXISTS public.quotation_items CASCADE;
 DROP TABLE IF EXISTS public.quotations CASCADE;
 DROP TABLE IF EXISTS public.rfq_attachments CASCADE;
@@ -179,7 +180,21 @@ CREATE TABLE IF NOT EXISTS public.quotation_items (
 
 CREATE INDEX IF NOT EXISTS idx_quotation_items_quotation_id ON public.quotation_items (quotation_id);
 
--- 11. Approvals Table
+-- 11. Quotation Attachments Table
+CREATE TABLE IF NOT EXISTS public.quotation_attachments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  quotation_id uuid NOT NULL REFERENCES public.quotations(id) ON DELETE CASCADE,
+  file_name text NOT NULL,
+  file_path text NOT NULL,
+  file_url text,
+  mime_type text,
+  file_size bigint,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_quotation_attachments_quotation_id ON public.quotation_attachments (quotation_id);
+
+-- 12. Approvals Table
 CREATE TABLE IF NOT EXISTS public.approvals (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   rfq_id uuid REFERENCES public.rfqs(id) ON DELETE CASCADE,

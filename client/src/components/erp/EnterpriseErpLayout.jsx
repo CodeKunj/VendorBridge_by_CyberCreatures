@@ -31,7 +31,7 @@ const defaultNavItems = [
   { id: 'invoices', label: 'Invoices', caption: 'Billing', icon: Receipt },
   { id: 'reports', label: 'Reports', caption: 'Analytics', icon: BarChart3 },
   { id: 'activity-logs', label: 'Activity Logs', caption: 'Audit trail', icon: History, adminOnly: true },
-  { id: 'settings', label: 'Settings', caption: 'System config', icon: Settings },
+  { id: 'settings', label: 'Settings', caption: 'System config', icon: Settings, adminOnly: true },
 ];
 
 const EnterpriseErpLayout = ({

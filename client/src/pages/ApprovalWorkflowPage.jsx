@@ -12,6 +12,7 @@ import {
   History,
   ChevronRight
 } from 'lucide-react';
+import { formatCurrency } from '../utils/currency';
 
 const ApprovalWorkflowPage = () => {
   const { user, logout } = useAuth();
@@ -211,7 +212,7 @@ const ApprovalWorkflowPage = () => {
                             RFQ: {app.rfqs?.rfq_number || 'N/A'} | Supplier: {app.quotations?.vendors?.company_name || 'N/A'}
                           </p>
                           <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--erp-primary)' }}>
-                            Amount: ${parseFloat(app.quotations?.total_amount || 0).toFixed(2)}
+                            Amount: {formatCurrency(app.quotations?.total_amount)}
                           </span>
                         </div>
                         
@@ -233,7 +234,7 @@ const ApprovalWorkflowPage = () => {
                             </button>
                           </div>
                         ) : (
-                          <span className="erp-badge erp-badge--warning">Pending Manager Sign-off</span>
+                          <span className="erp-badge erp-badge--warning">Pending Manager Decision</span>
                         )}
                       </div>
                     </article>
@@ -320,7 +321,7 @@ const ApprovalWorkflowPage = () => {
                 <div style={{ background: 'var(--erp-surface-container-low)', padding: '14px', borderRadius: '8px', border: '1px dashed var(--erp-outline-variant)' }}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--erp-outline)', fontWeight: 600 }}>Total Quoted Value</div>
                   <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--erp-primary)', marginTop: '4px' }}>
-                    ${parseFloat(selectedApp.quotations?.total_amount || 0).toFixed(2)}
+                    {formatCurrency(selectedApp.quotations?.total_amount)}
                   </div>
                 </div>
 

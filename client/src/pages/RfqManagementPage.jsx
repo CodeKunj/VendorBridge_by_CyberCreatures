@@ -140,6 +140,7 @@ const RfqManagementPage = () => {
 
   const submitForm = async (event) => {
     event.preventDefault();
+    setError('');
     try {
       const formData = new FormData();
       formData.append('title', form.title);
@@ -160,7 +161,12 @@ const RfqManagementPage = () => {
       setFormOpen(false);
       await loadRfqs(meta.page || 1);
     } catch (err) {
-      setError(err.message || 'Failed to save RFQ');
+      if (err.payload && err.payload.errors) {
+        const details = err.payload.errors.map((e) => `${e.field}: ${e.message}`).join(', ');
+        setError(`Validation failed - ${details}`);
+      } else {
+        setError(err.message || 'Failed to save RFQ');
+      }
     }
   };
 

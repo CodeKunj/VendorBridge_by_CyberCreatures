@@ -110,7 +110,7 @@ class RfqService {
   async create(payload, files = [], userId) {
     const rfqNumber = await rfqRepository.nextRfqNumber();
     const items = parseJsonField(payload.items, []);
-    const vendorIds = parseJsonField(payload.vendor_ids, []);
+    const vendorIds = parseJsonField(payload.vendor_ids || payload.vendorIds, []);
     const attachments = [];
 
     const rfq = await rfqRepository.create({
@@ -138,7 +138,7 @@ class RfqService {
     await this.getById(id);
 
     const items = payload.items ? parseJsonField(payload.items, []) : null;
-    const vendorIds = payload.vendor_ids ? parseJsonField(payload.vendor_ids, []) : null;
+    const vendorIds = (payload.vendor_ids || payload.vendorIds) ? parseJsonField(payload.vendor_ids || payload.vendorIds, []) : null;
     const attachments = [];
 
     const rfq = await rfqRepository.updateById(id, {
