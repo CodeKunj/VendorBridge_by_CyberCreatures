@@ -24,4 +24,13 @@ const authRateLimiter = rateLimit({
   skipSuccessfulRequests: true,
 });
 
-module.exports = { globalRateLimiter, authRateLimiter };
+const aiRateLimiter = rateLimit({
+  windowMs: env.rateLimitWindowMs,
+  max: Number(process.env.AI_RATE_LIMIT_MAX) || 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: skipInDev,
+  message: { success: false, message: 'Too many AI requests, please try again later.' },
+});
+
+module.exports = { globalRateLimiter, authRateLimiter, aiRateLimiter };

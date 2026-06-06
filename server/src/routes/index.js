@@ -14,6 +14,7 @@ router.use('/reports',        require('./report.routes'));
 router.use('/settings',       require('./settings.routes'));
 router.use('/activity-logs',  require('./activityLog.routes'));
 router.use('/dashboard',      require('./dashboard.routes'));
+router.use('/ai',             require('./ai.routes'));
 router.use('/health',         require('./health.routes'));
 
 module.exports = router;
