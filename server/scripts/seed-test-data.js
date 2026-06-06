@@ -288,10 +288,10 @@ async function createRfq({ rfq_number, title, description, deadline, status, cre
     const { error: itemsError } = await supabase.from('rfq_items').insert(
       items.map((item) => ({
         rfq_id: rfq.id,
-        product_name: item.product_name,
+        item_name: item.product_name,
+        description: item.notes || null,
         quantity: item.quantity,
-        unit: item.unit || 'units',
-        notes: item.notes || null,
+        uom: item.unit || 'units',
       })),
     );
     if (itemsError) fail(`RFQ items ${rfq_number}: ${itemsError.message}`);
@@ -328,11 +328,11 @@ async function createQuotation({ rfq_id, vendor_id, total_amount, delivery_days,
     const { error: itemsError } = await supabase.from('quotation_items').insert(
       items.map((item) => ({
         quotation_id: quotation.id,
-        product_name: item.product_name,
+        item_name: item.product_name,
+        description: item.notes || null,
         quantity: item.quantity,
         unit_price: item.unit_price,
-        delivery_time: item.delivery_time || delivery_days,
-        notes: item.notes || null,
+        total_price: item.unit_price * item.quantity,
       })),
     );
     if (itemsError) fail(`Quotation items: ${itemsError.message}`);
