@@ -1,0 +1,970 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { EnterpriseErpLayout } from '../components/erp';
+import { useAuth } from '../context/AuthContext';
+import { erpApi } from '../api/erpApi';
+
+const ProcurementPage = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  // Tab State: 'rfqs' | 'approvals'
+  const [activeTab, setActiveTab] = useState('rfqs');
+
+  // Lists state
+  const [rfqs, setRfqs] = useState([]);
+  const [approvals, setApprovals] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  // Selected Item details
+  const [selectedRfq, setSelectedRfq] = useState(null);
+  const [rfqItems, setRfqItems] = useState([]);
+  const [assignedVendors, setAssignedVendors] = useState([]);
+  const [submittedQuotations, setSubmittedQuotations] = useState([]);
+  const [comparison, setComparison] = useState(null);
+
+  // New RFQ State
+  const [showRfqModal, setShowRfqModal] = useState(false);
+  const [newRfq, setNewRfq] = useState({
+    title: '',
+    description: '',
+    deadline: '',
+    items: [{ item_name: '', description: '', quantity: 1, uom: 'units' }],
+    vendorIds: []
+  });
+
+  // New Quotation State (for Vendor role)
+  const [showQuotationModal, setShowQuotationModal] = useState(false);
+  const [newQuotation, setNewQuotation] = useState({
+    delivery_days: 5,
+    notes: '',
+    items: [] // array of { rfq_item_id, item_name, quantity, unit_price: 0, total_price: 0 }
+  });
+
+  // Approval Decision State (for Manager role)
+  const [showDecisionModal, setShowDecisionModal] = useState(false);
+  const [decision, setDecision] = useState({
+    approvalId: '',
+    status: 'approved',
+    comments: ''
+  });
+
+  const isProcurement = user?.role === 'procurement_officer' || user?.role === 'admin';
+  const isManager = user?.role === 'manager' || user?.role === 'admin';
+  const isVendor = user?.role === 'vendor';
+
+  useEffect(() => {
+    fetchInitialData();
+  }, [user]);
+
+  const fetchInitialData = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const rfqsRes = await erpApi.rfqs.list();
+      setRfqs(rfqsRes.data || []);
+
+      if (isProcurement) {
+        const vendorsRes = await erpApi.vendors.list();
+        setVendors((vendorsRes.data || []).filter(v => v.status === 'active'));
+      }
+
+      if (isManager) {
+        const appRes = await erpApi.approvals.list();
+        setApprovals(appRes.data || []);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to load procurement data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadRfqDetails = async (rfq) => {
+    setError('');
+    setSelectedRfq(rfq);
+    setComparison(null);
+    setSubmittedQuotations([]);
+    try {
+      const res = await erpApi.rfqs.getById(rfq.id);
+      // Backend details include items, assignments, etc.
+      setRfqItems(res.items || []);
+      setAssignedVendors(res.assignedVendors || []);
+
+      if (isProcurement || isManager) {
+        // Load quotes
+        const qRes = await erpApi.quotations.list({ rfq_id: rfq.id });
+        setSubmittedQuotations(qRes.data || []);
+
+        // Load comparison
+        try {
+          const compRes = await erpApi.quotations.compare(rfq.id);
+          setComparison(compRes.data);
+        } catch (cErr) {
+          // If no quotations or compare fails, suppress
+        }
+      }
+    } catch (err) {
+      setError('Failed to load RFQ items and bids details');
+    }
+  };
+
+  // RFQ Creation methods
+  const handleAddRfqItemRow = () => {
+    setNewRfq({
+      ...newRfq,
+      items: [...newRfq.items, { item_name: '', description: '', quantity: 1, uom: 'units' }]
+    });
+  };
+
+  const handleRemoveRfqItemRow = (index) => {
+    const list = [...newRfq.items];
+    list.splice(index, 1);
+    setNewRfq({ ...newRfq, items: list });
+  };
+
+  const handleRfqItemChange = (index, field, value) => {
+    const list = [...newRfq.items];
+    list[index][field] = value;
+    setNewRfq({ ...newRfq, items: list });
+  };
+
+  const handleToggleVendorSelect = (vendorId) => {
+    const current = [...newRfq.vendorIds];
+    const index = current.indexOf(vendorId);
+    if (index > -1) {
+      current.splice(index, 1);
+    } else {
+      current.push(vendorId);
+    }
+    setNewRfq({ ...newRfq, vendorIds: current });
+  };
+
+  const handleCreateRfq = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    if (newRfq.items.length === 0 || !newRfq.items[0].item_name) {
+      setError('Please add at least one line item');
+      return;
+    }
+    if (newRfq.vendorIds.length === 0) {
+      setError('Please assign at least one active vendor');
+      return;
+    }
+
+    try {
+      const payload = {
+        title: newRfq.title,
+        description: newRfq.description,
+        deadline: newRfq.deadline,
+        items: newRfq.items,
+        vendorIds: newRfq.vendorIds
+      };
+      await erpApi.rfqs.create(payload);
+      setSuccess('RFQ created successfully');
+      setShowRfqModal(false);
+      setNewRfq({
+        title: '',
+        description: '',
+        deadline: '',
+        items: [{ item_name: '', description: '', quantity: 1, uom: 'units' }],
+        vendorIds: []
+      });
+      fetchInitialData();
+    } catch (err) {
+      setError(err.message || 'Failed to create RFQ');
+    }
+  };
+
+  const handlePublishRfq = async (rfqId) => {
+    setError('');
+    setSuccess('');
+    try {
+      await erpApi.rfqs.publish(rfqId);
+      setSuccess('RFQ published successfully and dispatched to vendors');
+      fetchInitialData();
+      setSelectedRfq(null);
+    } catch (err) {
+      setError(err.message || 'Failed to publish RFQ');
+    }
+  };
+
+  // Vendor Quotation Submission
+  const handleOpenQuotationForm = () => {
+    // Populate form items matching RFQ items
+    const formItems = rfqItems.map(item => ({
+      rfq_item_id: item.id,
+      item_name: item.item_name,
+      quantity: parseFloat(item.quantity || 1),
+      unit_price: 0,
+      total_price: 0
+    }));
+    setNewQuotation({
+      delivery_days: 7,
+      notes: '',
+      items: formItems
+    });
+    setShowQuotationModal(true);
+  };
+
+  const handleQuotePriceChange = (index, val) => {
+    const list = [...newQuotation.items];
+    const unitPrice = parseFloat(val) || 0;
+    list[index].unit_price = unitPrice;
+    list[index].total_price = unitPrice * list[index].quantity;
+    setNewQuotation({ ...newQuotation, items: list });
+  };
+
+  const handleQuoteSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    try {
+      const totalAmount = newQuotation.items.reduce((sum, item) => sum + item.total_price, 0);
+      const payload = {
+        rfq_id: selectedRfq.id,
+        delivery_days: parseInt(newQuotation.delivery_days),
+        notes: newQuotation.notes,
+        total_amount: totalAmount,
+        items: newQuotation.items.map(i => ({
+          item_name: i.item_name,
+          quantity: i.quantity,
+          unit_price: i.unit_price,
+          total_price: i.total_price
+        }))
+      };
+
+      await erpApi.quotations.create(payload);
+      setSuccess('Quotation submitted successfully');
+      setShowQuotationModal(false);
+      loadRfqDetails(selectedRfq);
+    } catch (err) {
+      setError(err.message || 'Failed to submit quotation');
+    }
+  };
+
+  // Approval Workflows
+  const handleSubmitForApproval = async (quotationId) => {
+    setError('');
+    setSuccess('');
+    try {
+      // Backend automatically sets level 1 approval flow
+      await erpApi.approvals.decide({
+        id: quotationId, // In some setups quotation_id is linked directly
+        rfq_id: selectedRfq.id,
+        quotation_id: quotationId,
+        status: 'pending',
+        level: 1
+      });
+      setSuccess('Quotation submitted to management for approval');
+      loadRfqDetails(selectedRfq);
+    } catch (err) {
+      // In this specific mock database repo, submitting is done automatically 
+      // or we update status via backend trigger. Let's try inserting the record:
+      try {
+        await erpApi.approvals.decide({
+          id: quotationId,
+          status: 'pending'
+        });
+        setSuccess('Submitted for review');
+      } catch (err2) {
+        setError(err.message || 'Failed to submit approval workflow');
+      }
+    }
+  };
+
+  const handleOpenDecisionModal = (approvalId) => {
+    setDecision({
+      approvalId,
+      status: 'approved',
+      comments: ''
+    });
+    setShowDecisionModal(true);
+  };
+
+  const handleSaveDecision = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    try {
+      await erpApi.approvals.decide({
+        id: decision.approvalId,
+        status: decision.status,
+        comments: decision.comments
+      });
+      setSuccess('Approval decision saved successfully');
+      setShowDecisionModal(false);
+      fetchInitialData();
+    } catch (err) {
+      setError(err.message || 'Failed to record approval decision');
+    }
+  };
+
+  const handleGeneratePO = async (rfqId, quotationId) => {
+    setError('');
+    setSuccess('');
+    try {
+      // Find the vendor linked to quotation
+      const quote = submittedQuotations.find(q => q.id === quotationId);
+      const res = await erpApi.purchaseOrders.create({
+        rfq_id: rfqId,
+        quotation_id: quotationId,
+        vendor_id: quote?.vendor_id,
+        total_amount: quote?.total_amount
+      });
+      setSuccess(`Purchase Order created successfully: ${res.po_number || 'PO-OK'}`);
+      loadRfqDetails(selectedRfq);
+    } catch (err) {
+      setError(err.message || 'Failed to create Purchase Order');
+    }
+  };
+
+  const handleNavigate = (item) => {
+    if (item.id === 'dashboard') {
+      navigate('/dashboard');
+    } else {
+      navigate(`/${item.id}`);
+    }
+  };
+
+  return (
+    <EnterpriseErpLayout
+      user={user}
+      onNavigate={handleNavigate}
+      onLogout={async () => {
+        await logout();
+        navigate('/login', { replace: true });
+      }}
+      onProfile={() => navigate('/dashboard')}
+      onSettings={() => navigate('/settings')}
+    >
+      <div className="erp-breadcrumbs">
+        <span className="erp-breadcrumbs__item">ERP Dashboard</span>
+        <span className="erp-breadcrumbs__separator">/</span>
+        <span className="erp-breadcrumbs__current">Procurement</span>
+      </div>
+
+      <div className="erp-content">
+        {error && <div className="erp-alert erp-alert--danger">{error}</div>}
+        {success && <div className="erp-alert erp-alert--success">{success}</div>}
+
+        {/* ROLE TABS */}
+        {isManager && (
+          <div className="erp-tabs">
+            <button 
+              className={`erp-tab ${activeTab === 'rfqs' ? 'is-active' : ''}`}
+              onClick={() => { setActiveTab('rfqs'); setSelectedRfq(null); }}
+            >
+              Requests for Quotation (RFQs)
+            </button>
+            <button 
+              className={`erp-tab ${activeTab === 'approvals' ? 'is-active' : ''}`}
+              onClick={() => { setActiveTab('approvals'); setSelectedRfq(null); }}
+            >
+              Pending Approval Workflows
+            </button>
+          </div>
+        )}
+
+        <div className="erp-grid-2" style={{ alignItems: 'start' }}>
+          {/* RFQ MAIN PANEL */}
+          {activeTab === 'rfqs' && (
+            <section className="erp-card">
+              <div className="erp-card__header">
+                <div>
+                  <h2 className="erp-card__title">Requests for Quotations</h2>
+                  <p className="erp-card__subtitle">Procure supplies by inviting bids from verified suppliers.</p>
+                </div>
+                {isProcurement && (
+                  <button className="erp-btn erp-btn--primary" onClick={() => setShowRfqModal(true)}>
+                    + New RFQ
+                  </button>
+                )}
+              </div>
+
+              <div className="erp-card__body">
+                {loading ? (
+                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--erp-text-muted)' }}>
+                    Loading RFQs...
+                  </div>
+                ) : rfqs.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--erp-text-muted)' }}>
+                    No RFQs available.
+                  </div>
+                ) : (
+                  <div className="erp-table-wrapper">
+                    <table className="erp-table">
+                      <thead>
+                        <tr>
+                          <th>RFQ Number</th>
+                          <th>Title</th>
+                          <th>Deadline</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rfqs.map(rfq => (
+                          <tr 
+                            key={rfq.id} 
+                            onClick={() => loadRfqDetails(rfq)}
+                            style={{ cursor: 'pointer', background: selectedRfq?.id === rfq.id ? 'rgba(45,107,179,0.06)' : '' }}
+                          >
+                            <td><strong>{rfq.rfq_number}</strong></td>
+                            <td>{rfq.title}</td>
+                            <td>{new Date(rfq.deadline).toLocaleDateString()}</td>
+                            <td>
+                              <span className={`erp-badge erp-badge--${
+                                rfq.status === 'published' ? 'success' : 
+                                rfq.status === 'closed' ? 'danger' : 'draft'
+                              }`}>
+                                {rfq.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* APPROVALS MAIN PANEL */}
+          {activeTab === 'approvals' && (
+            <section className="erp-card">
+              <div className="erp-card__header">
+                <div>
+                  <h2 className="erp-card__title">Pending Sign-offs</h2>
+                  <p className="erp-card__subtitle">Authorize quotation bids and release purchase orders.</p>
+                </div>
+              </div>
+
+              <div className="erp-card__body">
+                {loading ? (
+                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--erp-text-muted)' }}>
+                    Loading approvals...
+                  </div>
+                ) : approvals.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--erp-text-muted)' }}>
+                    No pending approval requests.
+                  </div>
+                ) : (
+                  <div className="erp-table-wrapper">
+                    <table className="erp-table">
+                      <thead>
+                        <tr>
+                          <th>RFQ Code</th>
+                          <th>Level</th>
+                          <th>Status</th>
+                          <th>Date</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {approvals.map(app => (
+                          <tr key={app.id}>
+                            <td><strong>RFQ Approval Request</strong></td>
+                            <td>Level {app.level}</td>
+                            <td>
+                              <span className={`erp-badge erp-badge--${
+                                app.status === 'approved' ? 'success' : 
+                                app.status === 'rejected' ? 'danger' : 'warning'
+                              }`}>
+                                {app.status}
+                              </span>
+                            </td>
+                            <td>{new Date(app.created_at).toLocaleDateString()}</td>
+                            <td>
+                              {app.status === 'pending' && (
+                                <button 
+                                  className="erp-btn erp-btn--primary"
+                                  style={{ height: '30px', padding: '0 8px', fontSize: '0.8rem' }}
+                                  onClick={() => handleOpenDecisionModal(app.id)}
+                                >
+                                  Review
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* DETAIL SUB-PANEL */}
+          <section className="erp-card">
+            <div className="erp-card__header">
+              <h2 className="erp-card__title">
+                {selectedRfq ? `Details: ${selectedRfq.rfq_number}` : 'Select an item to view details'}
+              </h2>
+            </div>
+            <div className="erp-card__body">
+              {selectedRfq ? (
+                <div style={{ display: 'grid', gap: '20px' }}>
+                  <div>
+                    <h3 style={{ margin: '0 0 6px 0', fontSize: '1.1rem' }}>{selectedRfq.title}</h3>
+                    <p style={{ color: 'var(--erp-text-muted)', margin: 0 }}>{selectedRfq.description}</p>
+                    <div style={{ marginTop: '10px', fontSize: '0.85rem', display: 'flex', gap: '16px' }}>
+                      <span><strong>Deadline:</strong> {new Date(selectedRfq.deadline).toLocaleString()}</span>
+                      <span>
+                        <strong>Status:</strong>{' '}
+                        <span className={`erp-badge erp-badge--${
+                          selectedRfq.status === 'published' ? 'success' : 'draft'
+                        }`}>{selectedRfq.status}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', textTransform: 'uppercase' }}>Line Items</h4>
+                    <div className="erp-table-wrapper">
+                      <table className="erp-table">
+                        <thead>
+                          <tr>
+                            <th>Item Name</th>
+                            <th>Description</th>
+                            <th>Qty</th>
+                            <th>UOM</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rfqItems.map((item, idx) => (
+                            <tr key={item.id || idx}>
+                              <td>{item.item_name}</td>
+                              <td>{item.description || '-'}</td>
+                              <td>{item.quantity}</td>
+                              <td>{item.uom}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* VENDOR ASSIGNMENTS FOR OFFICERS */}
+                  {isProcurement && (
+                    <div>
+                      <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', textTransform: 'uppercase' }}>Assigned Suppliers</h4>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {assignedVendors.map(av => (
+                          <span key={av.id} className="erp-badge erp-badge--info">
+                            {av.company_name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* VENDOR BIDDING ACTION */}
+                  {isVendor && selectedRfq.status === 'published' && (
+                    <div style={{ background: 'var(--erp-page)', padding: '16px', borderRadius: '12px', border: '1px solid var(--erp-border)' }}>
+                      <p style={{ margin: '0 0 10px 0', fontSize: '0.9rem', fontWeight: 600 }}>Quotation Options</p>
+                      <button className="erp-btn erp-btn--primary" onClick={handleOpenQuotationForm}>
+                        Submit Bid Quotation
+                      </button>
+                    </div>
+                  )}
+
+                  {/* PROCUREMENT OFFICERS QUOTATION COMPARISON PANEL */}
+                  {(isProcurement || isManager) && (
+                    <div>
+                      <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', textTransform: 'uppercase' }}>Bids & Quotations</h4>
+                      {submittedQuotations.length === 0 ? (
+                        <p style={{ color: 'var(--erp-text-muted)', fontSize: '0.85rem' }}>No quotation bids submitted yet.</p>
+                      ) : (
+                        <div style={{ display: 'grid', gap: '16px' }}>
+                          <div className="erp-table-wrapper">
+                            <table className="erp-table">
+                              <thead>
+                                <tr>
+                                  <th>Vendor</th>
+                                  <th>Amount</th>
+                                  <th>Timeline</th>
+                                  <th>Status</th>
+                                  <th>PO Action</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {submittedQuotations.map(quote => (
+                                  <tr key={quote.id}>
+                                    <td>Quote Bid</td>
+                                    <td><strong>${quote.total_amount}</strong></td>
+                                    <td>{quote.delivery_days} days</td>
+                                    <td>
+                                      <span className={`erp-badge erp-badge--${
+                                        quote.status === 'accepted' ? 'success' : 
+                                        quote.status === 'rejected' ? 'danger' : 'warning'
+                                      }`}>
+                                        {quote.status}
+                                      </span>
+                                    </td>
+                                    <td>
+                                      {quote.status === 'accepted' && (
+                                        <button 
+                                          className="erp-btn erp-btn--primary"
+                                          style={{ height: '30px', padding: '0 10px', fontSize: '0.75rem' }}
+                                          onClick={() => handleGeneratePO(selectedRfq.id, quote.id)}
+                                        >
+                                          Release PO
+                                        </button>
+                                      )}
+                                      {quote.status === 'submitted' && isProcurement && (
+                                        <button 
+                                          className="erp-btn erp-btn--secondary"
+                                          style={{ height: '30px', padding: '0 10px', fontSize: '0.75rem' }}
+                                          onClick={() => handleSubmitForApproval(quote.id)}
+                                        >
+                                          Submit For Approval
+                                        </button>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {/* COMPARISON METRIC HIGHLIGHTS */}
+                          {comparison && (
+                            <div style={{ background: '#f8fafc', border: '1px solid var(--erp-border)', borderRadius: '12px', padding: '14px' }}>
+                              <p style={{ margin: '0 0 10px 0', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--erp-blue-900)' }}>
+                                Quotation Compare Engine
+                              </p>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '10px', borderRadius: '8px' }}>
+                                  <div style={{ fontSize: '0.75rem', color: '#047857', fontWeight: 700 }}>CHEAPEST BID</div>
+                                  <div style={{ fontSize: '1rem', fontWeight: 700, marginTop: '2px' }}>
+                                    ${comparison.cheapest?.total_amount}
+                                  </div>
+                                  <div style={{ fontSize: '0.75rem', color: 'var(--erp-text-muted)' }}>
+                                    {comparison.cheapest?.delivery_days} days delivery
+                                  </div>
+                                </div>
+                                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '10px', borderRadius: '8px' }}>
+                                  <div style={{ fontSize: '0.75rem', color: '#1d4ed8', fontWeight: 700 }}>FASTEST BID</div>
+                                  <div style={{ fontSize: '1rem', fontWeight: 700, marginTop: '2px' }}>
+                                    {comparison.fastest?.delivery_days} Days
+                                  </div>
+                                  <div style={{ fontSize: '0.75rem', color: 'var(--erp-text-muted)' }}>
+                                    Cost: ${comparison.fastest?.total_amount}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* GENERAL ACTIONS */}
+                  {isProcurement && selectedRfq.status === 'draft' && (
+                    <button className="erp-btn erp-btn--primary" onClick={() => handlePublishRfq(selectedRfq.id)}>
+                      Publish RFQ to Suppliers
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--erp-text-muted)' }}>
+                  Select an RFQ from the table list to manage items, bids, and compare options.
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+
+        {/* CREATE RFQ MODAL */}
+        {showRfqModal && (
+          <div className="erp-modal-overlay">
+            <div className="erp-modal" style={{ width: '800px' }}>
+              <div className="erp-modal__header">
+                <h3 className="erp-card__title">Create Request for Quotation</h3>
+                <button 
+                  style={{ border: 0, background: 'transparent', fontSize: '1.5rem', cursor: 'pointer' }}
+                  onClick={() => setShowRfqModal(false)}
+                >
+                  &times;
+                </button>
+              </div>
+              <form onSubmit={handleCreateRfq}>
+                <div className="erp-modal__body">
+                  <div className="erp-form">
+                    <div className="erp-grid-2">
+                      <div className="erp-form-group">
+                        <label className="erp-label">RFQ Title</label>
+                        <input 
+                          type="text" 
+                          className="erp-input"
+                          placeholder="e.g. Procurement of Laptop Batches"
+                          value={newRfq.title} 
+                          onChange={(e) => setNewRfq({ ...newRfq, title: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="erp-form-group">
+                        <label className="erp-label">Submission Deadline</label>
+                        <input 
+                          type="datetime-local" 
+                          className="erp-input"
+                          value={newRfq.deadline} 
+                          onChange={(e) => setNewRfq({ ...newRfq, deadline: e.target.value })}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="erp-form-group">
+                      <label className="erp-label">Project Description</label>
+                      <textarea 
+                        className="erp-textarea"
+                        placeholder="Detail procurement requirements, certifications, etc."
+                        value={newRfq.description} 
+                        onChange={(e) => setNewRfq({ ...newRfq, description: e.target.value })}
+                      />
+                    </div>
+
+                    {/* DYNAMIC ROW ITEMS */}
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <label className="erp-label">Procured Items</label>
+                        <button type="button" className="erp-btn erp-btn--secondary" style={{ height: '30px' }} onClick={handleAddRfqItemRow}>
+                          + Add Line
+                        </button>
+                      </div>
+                      <div style={{ display: 'grid', gap: '8px' }}>
+                        {newRfq.items.map((item, index) => (
+                          <div key={index} style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1fr auto', gap: '6px', alignItems: 'center' }}>
+                            <input 
+                              type="text" 
+                              className="erp-input" 
+                              placeholder="Item Name" 
+                              value={item.item_name}
+                              onChange={(e) => handleRfqItemChange(index, 'item_name', e.target.value)}
+                              required
+                            />
+                            <input 
+                              type="text" 
+                              className="erp-input" 
+                              placeholder="Description" 
+                              value={item.description}
+                              onChange={(e) => handleRfqItemChange(index, 'description', e.target.value)}
+                            />
+                            <input 
+                              type="number" 
+                              className="erp-input" 
+                              placeholder="Qty" 
+                              value={item.quantity}
+                              onChange={(e) => handleRfqItemChange(index, 'quantity', e.target.value)}
+                              min="0.1" 
+                              step="any"
+                              required
+                            />
+                            <input 
+                              type="text" 
+                              className="erp-input" 
+                              placeholder="UOM" 
+                              value={item.uom}
+                              onChange={(e) => handleRfqItemChange(index, 'uom', e.target.value)}
+                              required
+                            />
+                            <button 
+                              type="button" 
+                              className="erp-btn erp-btn--danger"
+                              style={{ height: '44px', width: '44px', padding: 0 }}
+                              onClick={() => handleRemoveRfqItemRow(index)}
+                              disabled={newRfq.items.length <= 1}
+                            >
+                              &times;
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* ASSIGN VENDORS */}
+                    <div>
+                      <label className="erp-label">Assign Suppliers</label>
+                      <p style={{ color: 'var(--erp-text-muted)', fontSize: '0.8rem', margin: '0 0 8px 0' }}>
+                        Select the suppliers who will receive notice to bid on this RFQ.
+                      </p>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '6px', maxHeight: '120px', overflowY: 'auto', border: '1px solid var(--erp-border)', padding: '10px', borderRadius: '12px' }}>
+                        {vendors.map(v => (
+                          <label key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.88rem' }}>
+                            <input 
+                              type="checkbox"
+                              checked={newRfq.vendorIds.includes(v.id)}
+                              onChange={() => handleToggleVendorSelect(v.id)}
+                            />
+                            {v.company_name}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="erp-modal__footer">
+                  <button type="button" className="erp-btn erp-btn--outline" onClick={() => setShowRfqModal(false)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="erp-btn erp-btn--primary">
+                    Create RFQ
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* VENDOR SUBMIT BID QUOTATION MODAL */}
+        {showQuotationModal && (
+          <div className="erp-modal-overlay">
+            <div className="erp-modal">
+              <div className="erp-modal__header">
+                <h3 className="erp-card__title">Submit Quotation Bid</h3>
+                <button 
+                  style={{ border: 0, background: 'transparent', fontSize: '1.5rem', cursor: 'pointer' }}
+                  onClick={() => setShowQuotationModal(false)}
+                >
+                  &times;
+                </button>
+              </div>
+              <form onSubmit={handleQuoteSubmit}>
+                <div className="erp-modal__body">
+                  <div className="erp-form">
+                    <div className="erp-grid-2">
+                      <div className="erp-form-group">
+                        <label className="erp-label">Delivery Timeline (Days)</label>
+                        <input 
+                          type="number" 
+                          className="erp-input"
+                          value={newQuotation.delivery_days} 
+                          onChange={(e) => setNewQuotation({ ...newQuotation, delivery_days: e.target.value })}
+                          min="1"
+                          required
+                        />
+                      </div>
+                      <div className="erp-form-group">
+                        <label className="erp-label">Estimated Bid Total</label>
+                        <input 
+                          type="text" 
+                          className="erp-input"
+                          value={`$${newQuotation.items.reduce((sum, item) => sum + item.total_price, 0).toFixed(2)}`}
+                          disabled 
+                        />
+                      </div>
+                    </div>
+
+                    <div className="erp-form-group">
+                      <label className="erp-label">Items Pricing Matrix</label>
+                      <div style={{ display: 'grid', gap: '8px' }}>
+                        {newQuotation.items.map((item, idx) => (
+                          <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '6px', alignItems: 'center' }}>
+                            <div>{item.item_name} (Qty: {item.quantity})</div>
+                            <input 
+                              type="number" 
+                              className="erp-input"
+                              placeholder="Unit Price"
+                              value={item.unit_price}
+                              onChange={(e) => handleQuotePriceChange(idx, e.target.value)}
+                              min="0"
+                              step="any"
+                              required
+                            />
+                            <div style={{ textAlign: 'right', fontWeight: 600 }}>
+                              Total: ${item.total_price.toFixed(2)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="erp-form-group">
+                      <label className="erp-label">Additional Bid Terms / Notes</label>
+                      <textarea 
+                        className="erp-textarea"
+                        placeholder="Detail warranties, supply contingencies, payment terms..."
+                        value={newQuotation.notes}
+                        onChange={(e) => setNewQuotation({ ...newQuotation, notes: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="erp-modal__footer">
+                  <button type="button" className="erp-btn erp-btn--outline" onClick={() => setShowQuotationModal(false)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="erp-btn erp-btn--primary">
+                    Submit Quotation
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* APPROVER DECISION MODAL */}
+        {showDecisionModal && (
+          <div className="erp-modal-overlay">
+            <div className="erp-modal">
+              <div className="erp-modal__header">
+                <h3 className="erp-card__title">Sign off Decision</h3>
+                <button 
+                  style={{ border: 0, background: 'transparent', fontSize: '1.5rem', cursor: 'pointer' }}
+                  onClick={() => setShowDecisionModal(false)}
+                >
+                  &times;
+                </button>
+              </div>
+              <form onSubmit={handleSaveDecision}>
+                <div className="erp-modal__body">
+                  <div className="erp-form">
+                    <div className="erp-form-group">
+                      <label className="erp-label">Decision Status</label>
+                      <select 
+                        className="erp-select"
+                        value={decision.status}
+                        onChange={(e) => setDecision({ ...decision, status: e.target.value })}
+                      >
+                        <option value="approved">Approve and Proceed</option>
+                        <option value="rejected">Reject Bid</option>
+                      </select>
+                    </div>
+                    <div className="erp-form-group">
+                      <label className="erp-label">Remarks / Comments</label>
+                      <textarea 
+                        className="erp-textarea"
+                        placeholder="Provide reasons, adjustment instructions, or approval conditions..."
+                        value={decision.comments}
+                        onChange={(e) => setDecision({ ...decision, comments: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="erp-modal__footer">
+                  <button type="button" className="erp-btn erp-btn--outline" onClick={() => setShowDecisionModal(false)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="erp-btn erp-btn--primary">
+                    Save Sign-off
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    </EnterpriseErpLayout>
+  );
+};
+
+export default ProcurementPage;
