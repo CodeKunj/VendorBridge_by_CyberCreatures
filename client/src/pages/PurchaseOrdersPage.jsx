@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { EnterpriseErpLayout } from '../components/erp';
 import { useAuth } from '../context/AuthContext';
 import { erpApi } from '../api/erpApi';
+import { formatCurrency } from '../utils/currency';
 
 const PurchaseOrdersPage = () => {
   const { user, logout } = useAuth();
@@ -269,7 +270,7 @@ const PurchaseOrdersPage = () => {
                           <td style={{ padding: '12px', fontWeight: 600 }}>{po.po_number}</td>
                           <td style={{ padding: '12px' }}>{po.rfqs?.rfq_number || '-'}</td>
                           <td style={{ padding: '12px' }}>{po.vendors?.company_name || 'N/A'}</td>
-                          <td style={{ padding: '12px', fontWeight: 600 }}>${parseFloat(po.total_amount || 0).toFixed(2)}</td>
+                          <td style={{ padding: '12px', fontWeight: 600 }}>{formatCurrency(po.total_amount)}</td>
                           <td style={{ padding: '12px' }}>
                             {po.issued_at ? new Date(po.issued_at).toLocaleDateString() : new Date(po.created_at).toLocaleDateString()}
                           </td>
@@ -369,8 +370,8 @@ const PurchaseOrdersPage = () => {
                         <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--erp-border)', textAlign: 'left' }}>
                           <th style={{ padding: '6px' }}>Item</th>
                           <th style={{ padding: '6px', textAlign: 'right' }}>Qty</th>
-                          <th style={{ padding: '6px', textAlign: 'right' }}>Unit ($)</th>
-                          <th style={{ padding: '6px', textAlign: 'right' }}>Total ($)</th>
+                          <th style={{ padding: '6px', textAlign: 'right' }}>Unit (₹)</th>
+                          <th style={{ padding: '6px', textAlign: 'right' }}>Total (₹)</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -381,8 +382,8 @@ const PurchaseOrdersPage = () => {
                               <div style={{ fontSize: '0.75rem', color: 'var(--erp-text-muted)' }}>{item.description}</div>
                             </td>
                             <td style={{ padding: '6px', textAlign: 'right' }}>{item.quantity}</td>
-                            <td style={{ padding: '6px', textAlign: 'right' }}>${parseFloat(item.unit_price || 0).toFixed(2)}</td>
-                            <td style={{ padding: '6px', textAlign: 'right' }}>${parseFloat(item.total_price || 0).toFixed(2)}</td>
+                            <td style={{ padding: '6px', textAlign: 'right' }}>{formatCurrency(item.unit_price)}</td>
+                            <td style={{ padding: '6px', textAlign: 'right' }}>{formatCurrency(item.total_price)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -392,7 +393,7 @@ const PurchaseOrdersPage = () => {
                       <div style={{ textAlign: 'right' }}>
                         <span style={{ color: 'var(--erp-text-muted)', fontSize: '0.88rem' }}>Total Amount:</span>
                         <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--erp-primary)', marginTop: '2px' }}>
-                          ${parseFloat(selectedPoDetails.total_amount || 0).toFixed(2)}
+                          {formatCurrency(selectedPoDetails.total_amount)}
                         </div>
                       </div>
                     </div>
@@ -476,7 +477,7 @@ const PurchaseOrdersPage = () => {
                     .filter(q => q.rfq_id === selectedRfqId)
                     .map(q => (
                       <option key={q.id} value={q.id}>
-                        Bid by {q.vendors?.company_name} - ${parseFloat(q.total_amount).toFixed(2)} ({q.status})
+                        Bid by {q.vendors?.company_name} - {formatCurrency(q.total_amount)} ({q.status})
                       </option>
                     ))
                   }
@@ -484,7 +485,7 @@ const PurchaseOrdersPage = () => {
               </div>
 
               <div className="erp-form-group">
-                <label className="erp-label">Calculated Total Price ($)</label>
+                <label className="erp-label">Calculated Total Price (₹)</label>
                 <input 
                   type="number" 
                   className="erp-input" 

@@ -6,16 +6,18 @@ const itemValidation = body('items').custom((value) => {
   const items = typeof value === 'string' ? JSON.parse(value) : value;
 
   if (!Array.isArray(items) || items.length === 0) {
-    throw new Error('At least one product is required');
+    throw new Error('At least one item is required');
   }
 
   for (const item of items) {
-    if (!item.product_name || String(item.product_name).trim().length < 2) {
-      throw new Error('Each product requires a valid product name');
+    // Accept both item_name (frontend) and product_name (legacy)
+    const name = item.item_name || item.product_name;
+    if (!name || String(name).trim().length < 2) {
+      throw new Error('Each item requires a valid name (at least 2 characters)');
     }
 
     if (!item.quantity || Number(item.quantity) <= 0) {
-      throw new Error('Each product requires a valid quantity');
+      throw new Error('Each item requires a valid quantity greater than 0');
     }
   }
 
@@ -31,19 +33,40 @@ const vendorIdsValidation = body('vendor_ids').optional().custom((value) => {
   return true;
 });
 
+// Also accept camelCase vendorIds sent by the frontend
+const vendorIdsCamelValidation = body('vendorIds').optional().custom((value) => {
+  if (!value) return true;
+  const vendorIds = typeof value === 'string' ? JSON.parse(value) : value;
+  if (!Array.isArray(vendorIds)) {
+    throw new Error('Vendor assignments must be an array');
+  }
+  return true;
+});
+
 const createRfqValidation = [
   body('title').trim().isLength({ min: 3 }).withMessage('Title is required'),
   body('description').optional().trim().isString(),
-  body('deadline').isISO8601().withMessage('Deadline must be a valid date'),
+  body('deadline').custom((value) => {
+    if (!value || isNaN(Date.parse(value))) {
+      throw new Error('Deadline must be a valid date');
+    }
+    return true;
+  }),
   itemValidation,
   vendorIdsValidation,
+  vendorIdsCamelValidation,
   body('status').optional().isIn(rfqStatusValues).withMessage('Invalid RFQ status'),
 ];
 
 const updateRfqValidation = [
   body('title').trim().isLength({ min: 3 }).withMessage('Title is required'),
   body('description').optional().trim().isString(),
-  body('deadline').isISO8601().withMessage('Deadline must be a valid date'),
+  body('deadline').custom((value) => {
+    if (!value || isNaN(Date.parse(value))) {
+      throw new Error('Deadline must be a valid date');
+    }
+    return true;
+  }),
   body('status').optional().isIn(rfqStatusValues).withMessage('Invalid RFQ status'),
   body('items').optional().custom((value) => {
     if (!value) return true;
@@ -54,6 +77,7 @@ const updateRfqValidation = [
     return true;
   }),
   vendorIdsValidation,
+  vendorIdsCamelValidation,
 ];
 
 const listRfqValidation = [

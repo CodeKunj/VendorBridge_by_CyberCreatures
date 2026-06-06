@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { EnterpriseErpLayout } from '../components/erp';
 import { useAuth } from '../context/AuthContext';
 import { erpApi } from '../api/erpApi';
+import { formatCurrency } from '../utils/currency';
 import {
   AreaChart,
   Area,
@@ -171,7 +172,7 @@ const ReportsPage = () => {
                   <div className="erp-card__body">
                     <p className="erp-card__subtitle" style={{ marginTop: 0 }}>Total Capital Spend</p>
                     <h3 className="erp-card__title" style={{ fontSize: '1.8rem', color: 'var(--erp-blue-900)' }}>
-                      ${spendingData.totalSpend?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
+                      {formatCurrency(spendingData.totalSpend)}
                     </h3>
                     <p className="erp-card__subtitle">Sum of active Purchase Orders</p>
                   </div>
@@ -191,9 +192,9 @@ const ReportsPage = () => {
                   <div className="erp-card__body">
                     <p className="erp-card__subtitle" style={{ marginTop: 0 }}>Average PO Value</p>
                     <h3 className="erp-card__title" style={{ fontSize: '1.8rem' }}>
-                      ${spendingData.allPOs?.length > 0 
-                        ? (spendingData.totalSpend / spendingData.allPOs.length).toLocaleString(undefined, { maximumFractionDigits: 0 }) 
-                        : '0'}
+                      {spendingData.allPOs?.length > 0 
+                        ? formatCurrency(spendingData.totalSpend / spendingData.allPOs.length)
+                        : '₹0'}
                     </h3>
                     <p className="erp-card__subtitle">Mean transaction cost</p>
                   </div>
@@ -222,7 +223,7 @@ const ReportsPage = () => {
                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
                             <XAxis dataKey="month" />
                             <YAxis />
-                            <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
+                            <Tooltip formatter={(value) => formatCurrency(value)} />
                             <Area type="monotone" dataKey="amount" stroke="#1f4f86" strokeWidth={2} fillOpacity={1} fill="url(#spendGrad)" />
                           </AreaChart>
                         </ResponsiveContainer>
@@ -246,7 +247,7 @@ const ReportsPage = () => {
                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
                             <XAxis dataKey="name" />
                             <YAxis />
-                            <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
+                            <Tooltip formatter={(value) => formatCurrency(value)} />
                             <Bar dataKey="amount" fill="#2d6bb3" radius={[8, 8, 0, 0]} />
                           </BarChart>
                         </ResponsiveContainer>
@@ -281,7 +282,7 @@ const ReportsPage = () => {
                             <th style={{ textAlign: 'center' }}>Participation</th>
                             <th style={{ textAlign: 'center' }}>Win Rate</th>
                             <th style={{ textAlign: 'center' }}>Avg Delivery Speed</th>
-                            <th>Total Spend ($)</th>
+                            <th>Total Spend (₹)</th>
                             <th style={{ textAlign: 'right' }}>Performance Score</th>
                           </tr>
                         </thead>
@@ -310,7 +311,7 @@ const ReportsPage = () => {
                                 {v.avgDeliveryDays > 0 ? `${v.avgDeliveryDays} days` : 'N/A'}
                               </td>
                               <td style={{ fontWeight: 600 }}>
-                                ${v.totalSpend?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                {formatCurrency(v.totalSpend)}
                               </td>
                               <td style={{ textAlign: 'right' }}>
                                 <span 

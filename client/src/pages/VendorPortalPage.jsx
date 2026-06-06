@@ -4,6 +4,7 @@ import { EnterpriseErpLayout } from '../components/erp';
 import { useAuth } from '../context/AuthContext';
 import { rfqApi } from '../api/rfqApi';
 import { quotationApi } from '../api/quotationApi';
+import { formatCurrency } from '../utils/currency';
 
 const createQuotationItem = (productName = '', quantity = '') => ({
   product_name: productName,
@@ -266,7 +267,7 @@ const VendorPortalPage = () => {
                 <thead>
                   <tr style={{ textAlign: 'left', color: '#64748b' }}>
                     <th style={{ padding: '12px' }}>RFQ</th>
-                    <th style={{ padding: '12px' }}>Total Amount</th>
+                    <th style={{ padding: '12px' }}>Total Amount (₹)</th>
                     <th style={{ padding: '12px' }}>Delivery</th>
                     <th style={{ padding: '12px' }}>Status</th>
                     <th style={{ padding: '12px' }}>Actions</th>
@@ -280,7 +281,7 @@ const VendorPortalPage = () => {
                   ) : quotations.map((quotation) => (
                     <tr key={quotation.id} style={{ borderTop: '1px solid #e5eef8' }}>
                       <td style={{ padding: '12px' }}>{quotation.rfqs?.rfq_number} - {quotation.rfqs?.title}</td>
-                      <td style={{ padding: '12px' }}>{quotation.total_amount || '-'}</td>
+                      <td style={{ padding: '12px' }}>{quotation.total_amount ? formatCurrency(quotation.total_amount) : '-'}</td>
                       <td style={{ padding: '12px' }}>{quotation.delivery_days ? `${quotation.delivery_days} days` : '-'}</td>
                       <td style={{ padding: '12px' }}>{quotation.status}</td>
                       <td style={{ padding: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -313,7 +314,7 @@ const VendorPortalPage = () => {
           <form onSubmit={submitQuotation} className="erp-notification-list" style={{ display: 'grid', gap: '12px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '12px' }}>
               <input className="erp-search__input" value={quotationForm.rfq_id} disabled placeholder="RFQ" />
-              <input className="erp-search__input" placeholder="Total Amount" type="number" min="0" value={quotationForm.total_amount} onChange={(event) => setQuotationForm((prev) => ({ ...prev, total_amount: event.target.value }))} />
+              <input className="erp-search__input" placeholder="Total Amount (₹)" type="number" min="0" value={quotationForm.total_amount} onChange={(event) => setQuotationForm((prev) => ({ ...prev, total_amount: event.target.value }))} />
               <input className="erp-search__input" placeholder="Delivery Time (days)" type="number" min="1" value={quotationForm.delivery_days} onChange={(event) => setQuotationForm((prev) => ({ ...prev, delivery_days: event.target.value }))} />
               <input className="erp-search__input" type="file" multiple onChange={(event) => setAttachments(Array.from(event.target.files || []))} />
             </div>
@@ -326,7 +327,7 @@ const VendorPortalPage = () => {
                 <div key={`${index}-${item.product_name}`} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr auto', gap: '8px', alignItems: 'center' }}>
                   <input className="erp-search__input" placeholder="Product" value={item.product_name} onChange={(event) => updateItem(index, 'product_name', event.target.value)} required />
                   <input className="erp-search__input" placeholder="Quantity" type="number" min="1" value={item.quantity} onChange={(event) => updateItem(index, 'quantity', event.target.value)} required />
-                  <input className="erp-search__input" placeholder="Unit Price" type="number" min="0" value={item.unit_price} onChange={(event) => updateItem(index, 'unit_price', event.target.value)} required />
+                  <input className="erp-search__input" placeholder="Unit Price (₹)" type="number" min="0" value={item.unit_price} onChange={(event) => updateItem(index, 'unit_price', event.target.value)} required />
                   <input className="erp-search__input" placeholder="Delivery Time" type="number" min="1" value={item.delivery_time} onChange={(event) => updateItem(index, 'delivery_time', event.target.value)} />
                   <input className="erp-search__input" placeholder="Item Notes" value={item.notes} onChange={(event) => updateItem(index, 'notes', event.target.value)} />
                   <button className="erp-icon-button" type="button" onClick={() => removeItem(index)}>Remove</button>

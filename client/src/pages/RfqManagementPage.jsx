@@ -129,6 +129,7 @@ const RfqManagementPage = () => {
 
   const submitForm = async (event) => {
     event.preventDefault();
+    setError('');
 
     const formData = new FormData();
     formData.append('title', form.title);
@@ -140,14 +141,23 @@ const RfqManagementPage = () => {
 
     attachments.forEach((file) => formData.append('attachments', file));
 
-    if (editId) {
-      await rfqApi.update(editId, formData);
-    } else {
-      await rfqApi.create(formData);
-    }
+    try {
+      if (editId) {
+        await rfqApi.update(editId, formData);
+      } else {
+        await rfqApi.create(formData);
+      }
 
-    setFormOpen(false);
-    await loadRfqs(meta.page || 1);
+      setFormOpen(false);
+      await loadRfqs(meta.page || 1);
+    } catch (err) {
+      if (err.payload && err.payload.errors) {
+        const details = err.payload.errors.map((e) => `${e.field}: ${e.message}`).join(', ');
+        setError(`Validation failed - ${details}`);
+      } else {
+        setError(err.message || 'Failed to save RFQ');
+      }
+    }
   };
 
   const deleteRfq = async (rfqId) => {

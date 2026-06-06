@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { EnterpriseErpLayout } from '../components/erp';
 import { useAuth } from '../context/AuthContext';
 import { erpApi } from '../api/erpApi';
+import { formatCurrency } from '../utils/currency';
 
 const ApprovalWorkflowPage = () => {
   const { user, logout } = useAuth();
@@ -207,7 +208,7 @@ const ApprovalWorkflowPage = () => {
                               RFQ: {app.rfqs?.rfq_number || 'N/A'} | Vendor: {app.quotations?.vendors?.company_name || 'N/A'}
                             </p>
                             <span style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--erp-primary)' }}>
-                              Total amount: ${parseFloat(app.quotations?.total_amount || 0).toFixed(2)}
+                              Total amount: {formatCurrency(app.quotations?.total_amount)}
                             </span>
                           </div>
                           
@@ -274,7 +275,7 @@ const ApprovalWorkflowPage = () => {
                           >
                             <td style={{ padding: '10px' }}>{app.rfqs?.rfq_number}</td>
                             <td style={{ padding: '10px' }}>{app.quotations?.vendors?.company_name}</td>
-                            <td style={{ padding: '10px' }}>${parseFloat(app.quotations?.total_amount || 0).toFixed(2)}</td>
+                            <td style={{ padding: '10px' }}>{formatCurrency(app.quotations?.total_amount)}</td>
                             <td style={{ padding: '10px' }}>
                               <span className={`erp-badge erp-badge--${app.status === 'approved' ? 'success' : 'danger'}`}>
                                 {app.status}
@@ -311,7 +312,7 @@ const ApprovalWorkflowPage = () => {
                     <div style={{ borderTop: '1px solid var(--erp-border)', margin: '14px 0', paddingTop: '14px' }}>
                       <div style={{ display: 'grid', gap: '8px', fontSize: '0.88rem' }}>
                         <div><strong>Supplier:</strong> {selectedApp.quotations?.vendors?.company_name}</div>
-                        <div><strong>Quotation Cost:</strong> ${parseFloat(selectedApp.quotations?.total_amount || 0).toFixed(2)}</div>
+                        <div><strong>Quotation Cost:</strong> {formatCurrency(selectedApp.quotations?.total_amount)}</div>
                         <div><strong>Current Approval Status:</strong> <span style={{ textTransform: 'uppercase', fontWeight: 600 }}>{selectedApp.status}</span></div>
                         {selectedApp.comments && (
                           <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '6px', borderLeft: '3px solid var(--erp-primary)', marginTop: '8px' }}>

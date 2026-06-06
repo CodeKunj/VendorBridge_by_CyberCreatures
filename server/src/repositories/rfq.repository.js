@@ -29,10 +29,10 @@ class RfqRepository extends BaseRepository {
 
     const payload = items.map((item) => ({
       rfq_id: rfqId,
-      product_name: item.product_name,
+      product_name: item.item_name || item.product_name,  // frontend sends item_name
       quantity: item.quantity,
-      unit: item.unit || null,
-      notes: item.notes || null,
+      unit: item.uom || item.unit || null,               // frontend sends uom
+      notes: item.description || item.notes || null,     // frontend sends description
     }));
 
     const { error: insertError } = await this.queryFor('rfq_items').insert(payload);

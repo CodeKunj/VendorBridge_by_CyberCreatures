@@ -559,7 +559,7 @@ const SettingsPage = () => {
                 </div>
                 <div className="erp-card__body" style={{ display: 'grid', gap: '16px' }}>
                   <div>
-                    <label className="erp-form-label">Auto PO Approval Limit ($)</label>
+                    <label className="erp-form-label">Auto PO Approval Limit (₹)</label>
                     <input 
                       type="number" 
                       className="erp-input" 
@@ -577,7 +577,7 @@ const SettingsPage = () => {
                         checked={Boolean(formData.workflow_require_multilevel_approvals)} 
                         onChange={(e) => handleFieldChange('workflow_require_multilevel_approvals', e.target.checked)}
                       />
-                      <span>Require multi-level board approvals for contract values exceeding $100k</span>
+                      <span>Require multi-level board approvals for contract values exceeding ₹1 Crore</span>
                     </label>
                   </div>
 

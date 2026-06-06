@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { EnterpriseErpLayout } from '../components/erp';
 import { useAuth } from '../context/AuthContext';
 import { erpApi } from '../api/erpApi';
+import { formatCurrency } from '../utils/currency';
 
 const ProcurementPage = () => {
   const { user, logout } = useAuth();
@@ -90,9 +91,21 @@ const ProcurementPage = () => {
     setSubmittedQuotations([]);
     try {
       const res = await erpApi.rfqs.getById(rfq.id);
-      // Backend details include items, assignments, etc.
-      setRfqItems(res.items || []);
-      setAssignedVendors(res.assignedVendors || []);
+      const rfqData = res.data || {};
+      
+      const items = (rfqData.rfq_items || []).map(item => ({
+        id: item.id,
+        item_name: item.item_name || item.product_name || '',
+        description: item.description || item.notes || '',
+        quantity: item.quantity || 1,
+        uom: item.uom || item.unit || 'units'
+      }));
+      setRfqItems(items);
+
+      const vendorsAssigned = (rfqData.rfq_vendor_assignments || [])
+        .map(assign => assign.vendors)
+        .filter(Boolean);
+      setAssignedVendors(vendorsAssigned);
 
       if (isProcurement || isManager) {
         // Load quotes
@@ -176,7 +189,12 @@ const ProcurementPage = () => {
       });
       fetchInitialData();
     } catch (err) {
-      setError(err.message || 'Failed to create RFQ');
+      if (err.payload && err.payload.errors) {
+        const details = err.payload.errors.map((e) => `${e.field}: ${e.message}`).join(', ');
+        setError(`Validation failed - ${details}`);
+      } else {
+        setError(err.message || 'Failed to create RFQ');
+      }
     }
   };
 
@@ -597,7 +615,7 @@ const ProcurementPage = () => {
                                 {submittedQuotations.map(quote => (
                                   <tr key={quote.id}>
                                     <td>Quote Bid</td>
-                                    <td><strong>${quote.total_amount}</strong></td>
+                                    <td><strong>{formatCurrency(quote.total_amount)}</strong></td>
                                     <td>{quote.delivery_days} days</td>
                                     <td>
                                       <span className={`erp-badge erp-badge--${
@@ -643,7 +661,7 @@ const ProcurementPage = () => {
                                 <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '10px', borderRadius: '8px' }}>
                                   <div style={{ fontSize: '0.75rem', color: '#047857', fontWeight: 700 }}>CHEAPEST BID</div>
                                   <div style={{ fontSize: '1rem', fontWeight: 700, marginTop: '2px' }}>
-                                    ${comparison.cheapest?.total_amount}
+                                    {formatCurrency(comparison.cheapest?.total_amount)}
                                   </div>
                                   <div style={{ fontSize: '0.75rem', color: 'var(--erp-text-muted)' }}>
                                     {comparison.cheapest?.delivery_days} days delivery
@@ -655,7 +673,7 @@ const ProcurementPage = () => {
                                     {comparison.fastest?.delivery_days} Days
                                   </div>
                                   <div style={{ fontSize: '0.75rem', color: 'var(--erp-text-muted)' }}>
-                                    Cost: ${comparison.fastest?.total_amount}
+                                    Cost: {formatCurrency(comparison.fastest?.total_amount)}
                                   </div>
                                 </div>
                               </div>

@@ -6,6 +6,7 @@ import { rfqApi } from '../api/rfqApi';
 import { quotationApi } from '../api/quotationApi';
 import { vendorApi } from '../api/vendorApi';
 import { erpApi } from '../api/erpApi';
+import { formatCurrency } from '../utils/currency';
 
 const QuotationComparisonPage = () => {
   const { user, logout } = useAuth();
@@ -72,7 +73,7 @@ const QuotationComparisonPage = () => {
     try {
       // Load RFQ items details
       const rfqRes = await rfqApi.getById(id);
-      setSelectedRfqDetails(rfqRes);
+      setSelectedRfqDetails(rfqRes.data);
 
       // Load comparison annotations
       const quoteRes = await quotationApi.compare(id);
@@ -237,7 +238,7 @@ const QuotationComparisonPage = () => {
                   </div>
 
                   <div className="erp-form-group" style={{ margin: 0 }}>
-                    <label className="erp-label" style={{ fontSize: '0.78rem' }}>Max Price Ceiling ($)</label>
+                    <label className="erp-label" style={{ fontSize: '0.78rem' }}>Max Price Ceiling (₹)</label>
                     <input
                       type="number"
                       className="erp-input"
@@ -363,7 +364,7 @@ const QuotationComparisonPage = () => {
                         <div style={{ background: '#f0fdf4', padding: '10px', borderRadius: '8px', border: '1px solid #d1fae5', textAlign: 'center' }}>
                           <span style={{ fontSize: '0.78rem', color: '#065f46', display: 'block', fontWeight: 600 }}>Total Bid Cost</span>
                           <strong style={{ fontSize: '1.25rem', color: '#047857', display: 'block', marginTop: '2px' }}>
-                            ${quote.total_amount.toFixed(2)}
+                            {formatCurrency(quote.total_amount)}
                           </strong>
                         </div>
                         <div style={{ background: '#f0f9ff', padding: '10px', borderRadius: '8px', border: '1px solid #e0f2fe', textAlign: 'center' }}>
@@ -381,7 +382,7 @@ const QuotationComparisonPage = () => {
                           {(quote.quotation_items || []).map((item, i) => (
                             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', borderBottom: '1px dashed var(--erp-border)', paddingBottom: '4px' }}>
                               <span>{item.item_name || `Item ${i+1}`} ({item.quantity} units)</span>
-                              <strong>${(item.unit_price || 0).toFixed(2)} / unit</strong>
+                              <strong>{formatCurrency(item.unit_price || 0)} / unit</strong>
                             </div>
                           ))}
                         </div>

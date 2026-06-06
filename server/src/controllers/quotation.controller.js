@@ -4,7 +4,26 @@ const { getPagination } = require('../utils/paginate');
 const { uploadQuotationAttachment, removeQuotationAttachment } = require('../utils/quotationsStorage');
 const { logActivity, notifyUser } = require('../utils/logger');
 
-const quotationColumns = `*, rfqs(rfq_number, title, deadline, status), vendors(company_name, vendor_code), quotation_items(*), quotation_attachments(*)`;
+const quotationColumns = `*, rfqs(rfq_number, title, deadline, status), vendors(company_name, vendor_code), quotation_items(*)`;
+
+// Separately fetch attachments and merge onto quotation(s) to avoid PostgREST join requirement
+const withAttachments = async (data) => {
+  if (!data) return data;
+  const isArray = Array.isArray(data);
+  const items = isArray ? data : [data];
+  const ids = items.map(q => q.id);
+  const { data: attachments } = await supabase
+    .from('quotation_attachments')
+    .select('*')
+    .in('quotation_id', ids);
+  const map = {};
+  (attachments || []).forEach(a => {
+    if (!map[a.quotation_id]) map[a.quotation_id] = [];
+    map[a.quotation_id].push(a);
+  });
+  const merged = items.map(q => ({ ...q, quotation_attachments: map[q.id] || [] }));
+  return isArray ? merged : merged[0];
+};
 
 const parseJsonField = (value, fallback = []) => {
   if (value === undefined || value === null || value === '') {
@@ -49,7 +68,8 @@ exports.list = async (req, res, next) => {
 
     const { data, count, error } = await query;
     if (error) throw error;
-    return sendPaginated(res, data, count, page, limit);
+    const enriched = await withAttachments(data || []);
+    return sendPaginated(res, enriched, count, page, limit);
   } catch (err) { next(err); }
 };
 
@@ -62,7 +82,8 @@ exports.getById = async (req, res, next) => {
       .single();
 
     if (error || !data) return sendError(res, 404, 'Quotation not found');
-    return sendSuccess(res, 200, 'Quotation fetched', data);
+    const enriched = await withAttachments(data);
+    return sendSuccess(res, 200, 'Quotation fetched', enriched);
   } catch (err) { next(err); }
 };
 
@@ -150,7 +171,7 @@ exports.update = async (req, res, next) => {
     const items = req.body.items !== undefined ? parseJsonField(req.body.items, []) : null;
     const user = req.user;
 
-    const { data: existing } = await supabase.from('quotations').select('*, rfqs(deadline, rfq_number), quotation_attachments(*), vendors(user_id)').eq('id', req.params.id).single();
+    const { data: existing } = await supabase.from('quotations').select('*, rfqs(deadline, rfq_number), vendors(user_id)').eq('id', req.params.id).single();
     if (!existing) return sendError(res, 404, 'Quotation not found');
     if (existing.vendors?.user_id !== user.id) return sendError(res, 403, 'You can only edit your own quotation');
     if (new Date(existing.rfqs.deadline) < new Date()) return sendError(res, 400, 'Cannot edit after deadline');

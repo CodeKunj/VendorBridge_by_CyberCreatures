@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { EnterpriseErpLayout } from '../components/erp';
 import { useAuth } from '../context/AuthContext';
 import { dashboardApi } from '../api/dashboardApi';
+import { formatCurrency, formatAxisINR } from '../utils/currency';
 import {
   Area,
   AreaChart,
@@ -46,11 +47,7 @@ const SectionCard = ({ title, subtitle, children, actions = null }) => (
   </section>
 );
 
-const formatCurrency = (value) => new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  maximumFractionDigits: 0,
-}).format(value || 0);
+
 
 const DashboardPage = () => {
   const { user, logout } = useAuth();
@@ -191,7 +188,7 @@ const DashboardPage = () => {
                         <LineChart data={spendingSummary}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#e5eef8" />
                           <XAxis dataKey="month" stroke="#64748b" />
-                          <YAxis tickFormatter={(value) => `$${value / 1000}k`} stroke="#64748b" />
+                          <YAxis tickFormatter={formatAxisINR} stroke="#64748b" />
                           <Tooltip formatter={(value) => formatCurrency(value)} />
                           <Line type="monotone" dataKey="spent" stroke="#1f4f86" strokeWidth={3} dot={{ r: 4 }} />
                         </LineChart>
