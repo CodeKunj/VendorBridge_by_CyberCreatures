@@ -41,7 +41,9 @@ const UserProfileDropdown = ({ user, onLogout, onProfile, onSettings }) => {
       {open ? (
         <div className="erp-profile-dropdown__menu" role="menu">
           <button className="erp-profile-dropdown__menu-item" type="button" onClick={onProfile}>My Profile</button>
-          <button className="erp-profile-dropdown__menu-item" type="button" onClick={onSettings}>Settings</button>
+          {user?.role === 'admin' && (
+            <button className="erp-profile-dropdown__menu-item" type="button" onClick={onSettings}>Settings</button>
+          )}
           <button className="erp-profile-dropdown__menu-item" type="button" onClick={onLogout}>Sign out</button>
         </div>
       ) : null}
