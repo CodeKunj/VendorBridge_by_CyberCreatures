@@ -29,3 +29,5 @@ process.on('unhandledRejection', (error) => {
     stack: error.stack,
   });
 });
+
+// Trigger reload

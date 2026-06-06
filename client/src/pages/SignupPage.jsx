@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const SignupPage = () => {
@@ -25,20 +25,92 @@ const SignupPage = () => {
   };
 
   return (
-    <form onSubmit={submit}>
-      <h1>Create account</h1>
-      <input placeholder="Name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required />
-      <input placeholder="Email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required />
-      <input placeholder="Password" type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required />
-      <select value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })}>
-        <option value="vendor">Vendor</option>
-        <option value="procurement_officer">Procurement Officer</option>
-        <option value="manager">Manager</option>
-        <option value="admin">Admin</option>
-      </select>
-      <button type="submit" disabled={loading}>Create account</button>
-      {error ? <p>{error}</p> : null}
-    </form>
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="auth-header">
+          <div className="auth-logo">VB</div>
+          <h1 className="auth-title">Create Account</h1>
+          <p className="auth-subtitle">Join VendorBridge Sourcing Network</p>
+        </div>
+
+        {error ? (
+          <div className="erp-alert erp-alert--danger" role="alert">
+            {error}
+          </div>
+        ) : null}
+
+        <form onSubmit={submit} className="auth-form">
+          <div className="erp-form-group">
+            <label className="erp-label" htmlFor="signup-name">Full Name</label>
+            <input
+              id="signup-name"
+              type="text"
+              className="erp-input"
+              placeholder="John Doe"
+              value={form.name}
+              onChange={(event) => setForm({ ...form, name: event.target.value })}
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div className="erp-form-group">
+            <label className="erp-label" htmlFor="signup-email">Email Address</label>
+            <input
+              id="signup-email"
+              type="email"
+              className="erp-input"
+              placeholder="name@company.com"
+              value={form.email}
+              onChange={(event) => setForm({ ...form, email: event.target.value })}
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div className="erp-form-group">
+            <label className="erp-label" htmlFor="signup-password">Password</label>
+            <input
+              id="signup-password"
+              type="password"
+              className="erp-input"
+              placeholder="••••••••"
+              value={form.password}
+              onChange={(event) => setForm({ ...form, password: event.target.value })}
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div className="erp-form-group">
+            <label className="erp-label" htmlFor="signup-role">Account Type</label>
+            <select
+              id="signup-role"
+              className="erp-select"
+              value={form.role}
+              onChange={(event) => setForm({ ...form, role: event.target.value })}
+              disabled={loading}
+            >
+              <option value="vendor">Vendor (Supplier)</option>
+              <option value="procurement_officer">Procurement Officer</option>
+              <option value="manager">Manager</option>
+              <option value="admin">Administrator</option>
+            </select>
+          </div>
+
+          <button type="submit" className="erp-btn erp-btn--primary" style={{ width: '100%', marginTop: '8px' }} disabled={loading}>
+            {loading ? 'Creating account...' : 'Create Account'}
+          </button>
+        </form>
+
+        <div className="auth-footer">
+          Already have an account?{' '}
+          <Link to="/login" className="auth-link">
+            Sign In
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 };
 
