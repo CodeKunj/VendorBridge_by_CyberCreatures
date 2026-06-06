@@ -5,6 +5,8 @@ const supabase = require('../config/db');
 const { logActivity, notifyUser } = require('../utils/logger');
 const { createTransporter } = require('../config/mailer');
 const PDFDocument = require('pdfkit');
+const { formatINR } = require('../utils/currency');
+const { drawLineItemHeader, drawLineItemRow, drawAmountRow } = require('../utils/pdfTable');
 
 const invoiceRepository = new BaseRepository('invoices');
 
@@ -57,49 +59,25 @@ const generateInvoicePdfBuffer = (invoice, items, po, vendor) => {
       doc.text('PO Reference: ' + (po?.po_number || 'N/A'), 300, startY + 45);
       doc.moveDown(4);
 
-      // Line items table header
       const tableTop = doc.y + 45;
-      doc.fontSize(10).text('Item Description', 50, tableTop, { bold: true });
-      doc.text('Qty', 300, tableTop, { align: 'right', bold: true });
-      doc.text('Unit Price', 400, tableTop, { align: 'right', bold: true });
-      doc.text('Total', 500, tableTop, { align: 'right', bold: true });
-      
-      doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke();
+      let currentY = drawLineItemHeader(doc, tableTop);
 
-      // Table body
-      let currentY = tableTop + 25;
       items.forEach((item) => {
-        doc.text(item.item_name || 'Line Item', 50, currentY);
-        doc.fontSize(8).text(item.description || '', 50, currentY + 12, { width: 200, color: 'gray' });
-        doc.fontSize(10);
-
-        doc.text(item.quantity.toString(), 300, currentY, { align: 'right' });
-        doc.text(`$${parseFloat(item.unit_price || 0).toFixed(2)}`, 400, currentY, { align: 'right' });
-        doc.text(`$${parseFloat(item.total_price || 0).toFixed(2)}`, 500, currentY, { align: 'right' });
-        currentY += 30;
+        currentY = drawLineItemRow(doc, item, currentY);
       });
 
-      // Horizontal separator
       doc.moveTo(50, currentY).lineTo(550, currentY).stroke();
-      currentY += 15;
+      currentY += 12;
 
       const subtotal = parseFloat(invoice.subtotal || 0);
       const tax = parseFloat(invoice.tax_amount || 0);
       const cgstSgst = tax / 2;
       const total = parseFloat(invoice.total_amount || 0);
 
-      // GST Breakdown
-      doc.text('SUBTOTAL:', 350, currentY);
-      doc.text(`$${subtotal.toFixed(2)}`, 500, currentY, { align: 'right' });
-
-      doc.text('CGST (9.0%):', 350, currentY + 15);
-      doc.text(`$${cgstSgst.toFixed(2)}`, 500, currentY + 15, { align: 'right' });
-
-      doc.text('SGST (9.0%):', 350, currentY + 30);
-      doc.text(`$${cgstSgst.toFixed(2)}`, 500, currentY + 30, { align: 'right' });
-
-      doc.fontSize(12).text('TOTAL DUE (INCL. GST):', 350, currentY + 50, { bold: true });
-      doc.text(`$${total.toFixed(2)}`, 500, currentY + 50, { align: 'right', bold: true });
+      currentY = drawAmountRow(doc, 'SUBTOTAL (INR):', subtotal, currentY);
+      currentY = drawAmountRow(doc, 'CGST (9.0%):', cgstSgst, currentY);
+      currentY = drawAmountRow(doc, 'SGST (9.0%):', cgstSgst, currentY);
+      currentY = drawAmountRow(doc, 'TOTAL DUE (INCL. GST):', total, currentY, { bold: true });
 
       // Sign-off / footer terms
       doc.fontSize(8).text('Disclaimer: This is a system-generated Tax Invoice and does not require a signature.', 50, currentY + 100, { align: 'center', color: 'gray' });
@@ -306,7 +284,7 @@ exports.sendEmail = async (req, res, next) => {
       to: recipientEmail,
       cc: invoice.vendors?.email || undefined,
       subject: `[INVOICE] Tax Invoice ${invoice.invoice_number} Issued`,
-      text: `Dear Partner,\n\nPlease find attached the official Tax Invoice ${invoice.invoice_number} generated for Purchase Order ${invoice.purchase_orders?.po_number || 'N/A'}.\n\nInvoice Overview:\n- Subtotal: $${parseFloat(invoice.subtotal).toFixed(2)}\n- GST (18.00%): $${parseFloat(invoice.tax_amount).toFixed(2)}\n- Total Due: $${parseFloat(invoice.total_amount).toFixed(2)}\n\nBest Regards,\nVendorBridge Finance Team`,
+      text: `Dear Partner,\n\nPlease find attached the official Tax Invoice ${invoice.invoice_number} generated for Purchase Order ${invoice.purchase_orders?.po_number || 'N/A'}.\n\nInvoice Overview:\n- Subtotal: ${formatINR(invoice.subtotal)}\n- GST (18.00%): ${formatINR(invoice.tax_amount)}\n- Total Due: ${formatINR(invoice.total_amount)}\n\nBest Regards,\nVendorBridge Finance Team`,
       attachments: [
         {
           filename: `${invoice.invoice_number}.pdf`,

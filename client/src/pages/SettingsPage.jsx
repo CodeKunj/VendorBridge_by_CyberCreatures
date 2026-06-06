@@ -11,6 +11,7 @@ import {
   Bell, 
   Workflow, 
   Key, 
+  Bot,
   ShieldAlert, 
   Settings,
   AlertCircle, 
@@ -74,6 +75,11 @@ const SettingsPage = () => {
     gemini_api_key: '',
     whatsapp_api_key: '',
     sms_gateway_api_key: '',
+
+    ai_enabled: true,
+    ai_model: 'gemini-2.0-flash',
+    ai_temperature: '0.4',
+    ai_max_tokens: '1024',
   });
 
   // SMTP Verification Address
@@ -131,7 +137,7 @@ const SettingsPage = () => {
       if (activeConfigSection === 'smtp' || activeConfigSection === 'templates') category = 'Email';
       else if (activeConfigSection === 'invoice') category = 'Finance';
       else if (activeConfigSection === 'workflow') category = 'Workflow';
-      else if (activeConfigSection === 'apis') category = 'Security';
+      else if (activeConfigSection === 'apis' || activeConfigSection === 'ai') category = 'Security';
 
       await Promise.all(
         sectionKeys.map(key => {
@@ -244,6 +250,7 @@ const SettingsPage = () => {
                   { id: 'invoice', label: 'Invoice Config', icon: Receipt },
                   { id: 'notifications', label: 'Alerts Settings', icon: Bell },
                   { id: 'workflow', label: 'Workflows', icon: Workflow },
+                  { id: 'ai', label: 'AI Assistant', icon: Bot },
                   { id: 'apis', label: 'API Integrations', icon: Key }
                 ].map(sec => {
                   const Icon = sec.icon;
@@ -643,6 +650,83 @@ const SettingsPage = () => {
                       onClick={() => handleSaveSection(['workflow_po_auto_approve_threshold', 'workflow_require_multilevel_approvals'], 'Workflow Settings')}
                     >
                       Save Workflow Configurations
+                    </button>
+                  </div>
+                </section>
+              )}
+
+              {/* AI Assistant Settings */}
+              {activeConfigSection === 'ai' && (
+                <section className="erp-card">
+                  <div className="erp-card__header">
+                    <h3 className="erp-card__title">Procurement AI Assistant</h3>
+                    <p className="erp-card__subtitle">Configure Gemini model, tokens, and enable the ERP copilot.</p>
+                  </div>
+                  <div className="erp-card__body" style={{ display: 'grid', gap: '16px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(formData.ai_enabled)}
+                        onChange={(e) => handleFieldChange('ai_enabled', e.target.checked)}
+                      />
+                      Enable AI Assistant for all ERP users
+                    </label>
+
+                    <div className="erp-form-group">
+                      <label className="erp-label">Gemini API Key</label>
+                      <input
+                        type="password"
+                        className="erp-input"
+                        placeholder="AIzaSy••••••••••••"
+                        value={formData.gemini_api_key}
+                        onChange={(e) => handleFieldChange('gemini_api_key', e.target.value)}
+                      />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                      <div className="erp-form-group" style={{ margin: 0 }}>
+                        <label className="erp-label">AI Model</label>
+                        <input
+                          type="text"
+                          className="erp-input"
+                          value={formData.ai_model}
+                          onChange={(e) => handleFieldChange('ai_model', e.target.value)}
+                        />
+                      </div>
+                      <div className="erp-form-group" style={{ margin: 0 }}>
+                        <label className="erp-label">Temperature</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="2"
+                          step="0.1"
+                          className="erp-input"
+                          value={formData.ai_temperature}
+                          onChange={(e) => handleFieldChange('ai_temperature', e.target.value)}
+                        />
+                      </div>
+                      <div className="erp-form-group" style={{ margin: 0 }}>
+                        <label className="erp-label">Max Tokens</label>
+                        <input
+                          type="number"
+                          min="256"
+                          max="8192"
+                          className="erp-input"
+                          value={formData.ai_max_tokens}
+                          onChange={(e) => handleFieldChange('ai_max_tokens', e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      className="erp-btn erp-btn--primary"
+                      style={{ width: 'fit-content' }}
+                      onClick={() => handleSaveSection(
+                        ['ai_enabled', 'ai_model', 'ai_temperature', 'ai_max_tokens', 'gemini_api_key'],
+                        'AI Assistant Settings',
+                      )}
+                    >
+                      Save AI Configuration
                     </button>
                   </div>
                 </section>

@@ -7,6 +7,7 @@ import Breadcrumbs from './Breadcrumbs';
 import NotificationPanel from './NotificationPanel';
 import { erpApi } from '../../api/erpApi';
 import { useAuth } from '../../context/AuthContext';
+import ProcurementAssistant from '../ai/ProcurementAssistant';
 import {
   LayoutDashboard,
   Globe,
@@ -168,6 +169,8 @@ const EnterpriseErpLayout = ({
         onDelete={handleDeleteNotification}
         onClose={() => setNotificationsOpen(false)}
       />
+
+      <ProcurementAssistant />
     </div>
   );
 };

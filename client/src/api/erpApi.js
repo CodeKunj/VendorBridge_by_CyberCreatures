@@ -117,6 +117,19 @@ export const erpApi = {
     delete: (id) => request(`/notifications/${id}`, { method: 'DELETE' }),
   },
 
+  // AI Assistant
+  ai: {
+    chat: (message) => request('/ai/chat', { method: 'POST', body: JSON.stringify({ message }) }),
+    history: (params = {}) => {
+      const filteredParams = Object.fromEntries(
+        Object.entries(params).filter(([, v]) => v !== '' && v != null),
+      );
+      const q = new URLSearchParams(filteredParams).toString();
+      return request(`/ai/history${q ? `?${q}` : ''}`, { method: 'GET' });
+    },
+    status: () => request('/ai/status', { method: 'GET' }),
+  },
+
   // Activity Logs
   activityLogs: {
     list: (params = {}) => {

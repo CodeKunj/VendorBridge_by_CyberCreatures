@@ -28,6 +28,12 @@ const schema = Joi.object({
   SMTP_FROM_EMAIL: Joi.string().email().allow('').default('noreply@vendorbridge.com'),
   ENCRYPTION_KEY: Joi.string().allow(''),
   SUPABASE_STORAGE_BUCKET: Joi.string().allow('').default('vendorbridge-files'),
+  AI_SERVICE_URL: Joi.string().uri().allow('').default('http://localhost:8000'),
+  AI_SERVICE_SECRET: Joi.string().allow(''),
+  AI_MODEL: Joi.string().allow('').default('gemini-2.0-flash'),
+  AI_TEMPERATURE: Joi.number().min(0).max(2).default(0.4),
+  AI_MAX_TOKENS: Joi.number().integer().min(256).max(8192).default(1024),
+  GEMINI_API_KEY: Joi.string().allow(''),
 }).unknown(true);
 
 const { value, error } = schema.validate(process.env, { abortEarly: false });
@@ -67,4 +73,10 @@ module.exports = {
   },
   encryptionKey: value.ENCRYPTION_KEY,
   supabaseStorageBucket: value.SUPABASE_STORAGE_BUCKET,
+  aiServiceUrl: value.AI_SERVICE_URL,
+  aiServiceSecret: value.AI_SERVICE_SECRET,
+  aiModel: value.AI_MODEL,
+  aiTemperature: Number(value.AI_TEMPERATURE),
+  aiMaxTokens: Number(value.AI_MAX_TOKENS),
+  geminiApiKey: value.GEMINI_API_KEY,
 };

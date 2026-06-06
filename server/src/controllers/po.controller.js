@@ -4,6 +4,7 @@ const { sendSuccess, sendError } = require('../utils/response');
 const supabase = require('../config/db');
 const { logActivity, notifyUser } = require('../utils/logger');
 const PDFDocument = require('pdfkit');
+const { drawLineItemHeader, drawLineItemRow, drawAmountRow } = require('../utils/pdfTable');
 
 const poRepository = new BaseRepository('purchase_orders');
 
@@ -253,33 +254,16 @@ exports.downloadPdf = async (req, res, next) => {
     doc.text('VendorBridge Headquarters', 300, startY + 45);
     doc.moveDown(4);
 
-    // Draw Line items header
     const tableTop = doc.y + 40;
-    doc.fontSize(10).text('Item Description', 50, tableTop, { bold: true });
-    doc.text('Qty', 300, tableTop, { align: 'right', bold: true });
-    doc.text('Unit Price', 400, tableTop, { align: 'right', bold: true });
-    doc.text('Total', 500, tableTop, { align: 'right', bold: true });
-    
-    doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke();
+    let currentY = drawLineItemHeader(doc, tableTop);
 
-    // Draw Line items body
-    let currentY = tableTop + 25;
     items.forEach((item) => {
-      doc.text(item.item_name, 50, currentY);
-      doc.fontSize(8).text(item.description || '', 50, currentY + 12, { width: 200, color: 'gray' });
-      doc.fontSize(10);
-
-      doc.text(item.quantity.toString(), 300, currentY, { align: 'right' });
-      doc.text(`$${parseFloat(item.unit_price || 0).toFixed(2)}`, 400, currentY, { align: 'right' });
-      doc.text(`$${parseFloat(item.total_price || 0).toFixed(2)}`, 500, currentY, { align: 'right' });
-      currentY += 30;
+      currentY = drawLineItemRow(doc, item, currentY);
     });
 
-    // Total Amount line
     doc.moveTo(50, currentY).lineTo(550, currentY).stroke();
-    currentY += 15;
-    doc.fontSize(12).text('TOTAL AMOUNT:', 350, currentY, { bold: true });
-    doc.text(`$${parseFloat(po.total_amount || 0).toFixed(2)}`, 500, currentY, { align: 'right', bold: true });
+    currentY += 12;
+    currentY = drawAmountRow(doc, 'TOTAL AMOUNT (INR):', po.total_amount || 0, currentY, { bold: true });
 
     // Footer terms
     doc.fontSize(9).text('Terms & Conditions:', 50, currentY + 60, { underline: true });
