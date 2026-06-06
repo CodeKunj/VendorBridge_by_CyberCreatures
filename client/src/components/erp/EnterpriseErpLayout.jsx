@@ -21,17 +21,17 @@ import {
 } from 'lucide-react';
 
 const defaultNavItems = [
-  { id: 'dashboard', label: 'Dashboard', caption: 'Overview', icon: LayoutDashboard },
-  { id: 'vendor-portal', label: 'Vendor Portal', caption: 'Active bids', icon: Globe },
-  { id: 'rfqs', label: 'RFQs', caption: 'Quotations', icon: FileText },
-  { id: 'compare', label: 'Compare Bids', caption: 'Comparison', icon: Scale },
-  { id: 'approvals', label: 'Approvals', caption: 'Workflow', icon: CheckSquare },
-  { id: 'purchase-orders', label: 'Purchase Orders', caption: 'POs', icon: FileSpreadsheet },
-  { id: 'vendors', label: 'Vendors', caption: 'Directory', icon: Users },
-  { id: 'invoices', label: 'Invoices', caption: 'Billing', icon: Receipt },
-  { id: 'reports', label: 'Reports', caption: 'Analytics', icon: BarChart3 },
-  { id: 'activity-logs', label: 'Activity Logs', caption: 'Audit trail', icon: History, adminOnly: true },
-  { id: 'settings', label: 'Settings', caption: 'System config', icon: Settings, adminOnly: true },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'vendor-portal', label: 'Vendor Portal', icon: Globe },
+  { id: 'rfqs', label: 'RFQs', icon: FileText },
+  { id: 'compare', label: 'Compare Bids', icon: Scale },
+  { id: 'approvals', label: 'Approvals', icon: CheckSquare },
+  { id: 'purchase-orders', label: 'Purchase Orders', icon: FileSpreadsheet },
+  { id: 'vendors', label: 'Vendors', icon: Users },
+  { id: 'invoices', label: 'Invoices', icon: Receipt },
+  { id: 'reports', label: 'Reports', icon: BarChart3 },
+  { id: 'activity-logs', label: 'Activity Logs', icon: History, adminOnly: true },
+  { id: 'settings', label: 'Settings', icon: Settings, adminOnly: true },
 ];
 
 const EnterpriseErpLayout = ({

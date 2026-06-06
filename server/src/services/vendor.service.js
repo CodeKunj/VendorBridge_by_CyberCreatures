@@ -57,23 +57,25 @@ class VendorService {
   }
 
   async update(id, payload) {
-    const existing = await vendorRepository.findById(id, 'id');
+    const existing = await vendorRepository.findById(id, '*');
 
     if (!existing) {
       throw new AppError('Vendor not found', 404);
     }
 
-    return vendorRepository.updateById(id, {
-      company_name: payload.company_name,
-      gst_number: payload.gst_number,
-      contact_person: payload.contact_person,
-      email: payload.email.toLowerCase(),
-      phone: payload.phone,
-      address: payload.address,
-      category: payload.category,
-      status: payload.status,
+    const updateData = {
+      company_name: payload.company_name !== undefined ? payload.company_name : existing.company_name,
+      gst_number: payload.gst_number !== undefined ? payload.gst_number : existing.gst_number,
+      contact_person: payload.contact_person !== undefined ? payload.contact_person : existing.contact_person,
+      email: payload.email !== undefined ? payload.email.toLowerCase() : existing.email,
+      phone: payload.phone !== undefined ? payload.phone : existing.phone,
+      address: payload.address !== undefined ? payload.address : existing.address,
+      category: payload.category !== undefined ? payload.category : existing.category,
+      status: payload.status !== undefined ? payload.status : existing.status,
       updated_at: new Date().toISOString(),
-    }, SELECT_COLUMNS);
+    };
+
+    return vendorRepository.updateById(id, updateData, SELECT_COLUMNS);
   }
 
   async remove(id) {

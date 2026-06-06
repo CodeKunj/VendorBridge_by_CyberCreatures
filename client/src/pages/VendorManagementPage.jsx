@@ -126,7 +126,14 @@ const VendorManagementPage = () => {
       setFormOpen(false);
       await loadVendors(meta.page || 1);
     } catch (err) {
-      setError(err.message || 'Failed to save vendor details');
+      if (err.payload?.errors) {
+        const fieldErrors = err.payload.errors.map(e => `${e.field}: ${e.message}`).join(', ');
+        setError(`Validation failed - ${fieldErrors}`);
+      } else if (err.payload?.message) {
+        setError(err.payload.message);
+      } else {
+        setError(err.message || 'Failed to save vendor details');
+      }
     }
   };
 

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 /* Reset and Globals */
 * {
@@ -68,7 +68,7 @@ html, body {
   height: 100%;
   background-color: var(--erp-background);
   color: var(--erp-on-background);
-  font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -186,6 +186,11 @@ h1, h2, h3, h4, h5, h6 {
   background-color: rgba(38, 77, 217, 0.08); /* 10% opacity primary */
   color: var(--erp-primary);
   font-weight: 600;
+}
+
+.erp-sidebar__item.is-active:hover {
+  background-color: rgba(38, 77, 217, 0.14);
+  color: var(--erp-primary);
 }
 
 .erp-sidebar__item-icon {
@@ -1041,4 +1046,65 @@ h1, h2, h3, h4, h5, h6 {
   .erp-settings-layout {
     grid-template-columns: 1fr;
   }
+}
+
+/* Premium Slim Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--erp-outline-variant);
+  border-radius: var(--erp-radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--erp-outline);
+}
+
+/* Firefox scrollbar styles */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--erp-outline-variant) transparent;
+}
+
+/* Tabs and Tab Groups */
+.erp-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--erp-surface-container-high);
+  padding-bottom: 8px;
+}
+
+.erp-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--erp-on-surface-variant);
+  border-radius: var(--erp-radius-default);
+  cursor: pointer;
+  transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.erp-tab:hover {
+  background-color: var(--erp-surface-container-low);
+  color: var(--erp-on-surface);
+}
+
+.erp-tab.is-active {
+  background-color: var(--erp-primary);
+  color: var(--erp-on-primary);
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(38, 77, 217, 0.25);
 }

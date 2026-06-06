@@ -4,13 +4,17 @@ import { X, Check } from 'lucide-react';
 const NotificationPanel = ({ open, notifications = [], onMarkRead, onMarkAllRead, onDelete, onClose }) => {
   const [activeTab, setActiveTab] = useState('all');
 
+  const safeNotifications = useMemo(() => {
+    return Array.isArray(notifications) ? notifications : [];
+  }, [notifications]);
+
   if (!open) {
     return null;
   }
 
   const filteredNotifications = useMemo(() => {
-    if (activeTab === 'all') return notifications;
-    return notifications.filter(n => {
+    if (activeTab === 'all') return safeNotifications;
+    return safeNotifications.filter(n => {
       const type = (n.type || '').toLowerCase();
       if (activeTab === 'rfq') return type === 'rfq';
       if (activeTab === 'quotation') return type === 'quotation';
@@ -19,7 +23,7 @@ const NotificationPanel = ({ open, notifications = [], onMarkRead, onMarkAllRead
       if (activeTab === 'invoice') return type === 'invoice';
       return false;
     });
-  }, [notifications, activeTab]);
+  }, [safeNotifications, activeTab]);
 
   const getBadgeClass = (type) => {
     switch ((type || '').toLowerCase()) {
@@ -29,6 +33,17 @@ const NotificationPanel = ({ open, notifications = [], onMarkRead, onMarkAllRead
       case 'po': return 'erp-badge erp-badge--success';
       case 'invoice': return 'erp-badge erp-badge--draft';
       default: return 'erp-badge';
+    }
+  };
+
+  const formatTime = (dateStr) => {
+    try {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return '';
     }
   };
 
@@ -42,7 +57,7 @@ const NotificationPanel = ({ open, notifications = [], onMarkRead, onMarkAllRead
             <p className="erp-card__subtitle" style={{ margin: '2px 0 0' }}>System alerts</p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {notifications.some(n => !n.read_at) && (
+            {safeNotifications.some(n => !n.read_at) && (
               <button 
                 onClick={onMarkAllRead} 
                 className="erp-btn erp-btn--secondary" 
@@ -58,7 +73,7 @@ const NotificationPanel = ({ open, notifications = [], onMarkRead, onMarkAllRead
         </header>
 
         {/* Tab Filters */}
-        <div style={{ display: 'flex', gap: '4px', padding: '10px 16px', borderBottom: '1px solid var(--erp-border)', overflowX: 'auto', background: 'var(--erp-surface-dim)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: '4px', padding: '10px 16px', borderBottom: '1px solid var(--erp-outline-variant)', overflowX: 'auto', background: 'var(--erp-surface-dim)', flexShrink: 0 }}>
           {['all', 'rfq', 'quotation', 'approval', 'po', 'invoice'].map((tab) => (
             <button
               key={tab}
@@ -101,7 +116,7 @@ const NotificationPanel = ({ open, notifications = [], onMarkRead, onMarkAllRead
               >
                 <div className="erp-notification-item__meta">
                   <span className={getBadgeClass(n.type)}>{n.type || 'System'}</span>
-                  <span>{new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  <span>{formatTime(n.created_at)}</span>
                 </div>
                 <h3 className="erp-notification-item__title">{n.title}</h3>
                 <p className="erp-notification-item__body">{n.message}</p>
