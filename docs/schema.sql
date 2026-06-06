@@ -5,6 +5,24 @@
 -- Enable extension for uuid generation
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
+-- Drop existing tables to ensure clean schema recreation (avoids IF NOT EXISTS column mismatch errors)
+DROP TABLE IF EXISTS public.settings CASCADE;
+DROP TABLE IF EXISTS public.activity_logs CASCADE;
+DROP TABLE IF EXISTS public.notifications CASCADE;
+DROP TABLE IF EXISTS public.invoices CASCADE;
+DROP TABLE IF EXISTS public.purchase_orders CASCADE;
+DROP TABLE IF EXISTS public.approvals CASCADE;
+DROP TABLE IF EXISTS public.quotation_items CASCADE;
+DROP TABLE IF EXISTS public.quotations CASCADE;
+DROP TABLE IF EXISTS public.rfq_attachments CASCADE;
+DROP TABLE IF EXISTS public.rfq_vendor_assignments CASCADE;
+DROP TABLE IF EXISTS public.rfq_items CASCADE;
+DROP TABLE IF EXISTS public.rfqs CASCADE;
+DROP TABLE IF EXISTS public.vendors CASCADE;
+DROP TABLE IF EXISTS public.password_reset_tokens CASCADE;
+DROP TABLE IF EXISTS public.auth_sessions CASCADE;
+DROP TABLE IF EXISTS public.users CASCADE;
+
 -- 1. Users Table
 CREATE TABLE IF NOT EXISTS public.users (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
