@@ -13,7 +13,7 @@ def _configure_gemini(api_key: Optional[str] = None, model_name: Optional[str] =
     if not key:
         raise RuntimeError("Gemini API key is not configured")
     genai.configure(api_key=key)
-    return genai.GenerativeModel(model_name or os.getenv("AI_MODEL", "gemini-2.0-flash"))
+    return genai.GenerativeModel(model_name or os.getenv("AI_MODEL", "gemini-flash-latest"))
 
 
 def _fallback_response(intent: str, context: dict[str, Any]) -> str:
@@ -82,7 +82,7 @@ def generate_response(
 
     temperature = float(config.get("temperature") or os.getenv("AI_TEMPERATURE", 0.4))
     max_tokens = int(config.get("max_tokens") or os.getenv("AI_MAX_TOKENS", 1024))
-    model_name = config.get("model") or os.getenv("AI_MODEL", "gemini-2.0-flash")
+    model_name = config.get("model") or os.getenv("AI_MODEL", "gemini-flash-latest")
 
     system_prompt = f"""You are VendorBridge ERP Procurement Assistant — an enterprise copilot for procurement, vendors, RFQs, quotations, approvals, purchase orders, and invoices.
 
