@@ -214,6 +214,7 @@ exports.decide = async (req, res, next) => {
         .from('quotations')
         .update({ status: 'rejected' })
         .eq('id', app.quotation_id);
+    }
     // Audit Log
     await logActivity(req.user.id, `Workflow approval decided: ${status}`, 'Approvals', app.id, { comments }, req.ip);
 
