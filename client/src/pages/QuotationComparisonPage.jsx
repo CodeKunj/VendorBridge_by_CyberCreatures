@@ -170,6 +170,7 @@ const QuotationComparisonPage = () => {
   return (
     <EnterpriseErpLayout
       user={user}
+      activeNavId="compare"
       onNavigate={handleNavigate}
       onLogout={async () => {
         await logout();

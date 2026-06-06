@@ -205,6 +205,7 @@ const PurchaseOrdersPage = () => {
   return (
     <EnterpriseErpLayout
       user={user}
+      activeNavId="purchase-orders"
       onNavigate={handleNavigate}
       onLogout={async () => {
         await logout();

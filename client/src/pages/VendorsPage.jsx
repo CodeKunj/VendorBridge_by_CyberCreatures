@@ -156,6 +156,7 @@ const VendorsPage = () => {
   return (
     <EnterpriseErpLayout
       user={user}
+      activeNavId="vendors"
       onNavigate={handleNavigate}
       onLogout={async () => {
         await logout();

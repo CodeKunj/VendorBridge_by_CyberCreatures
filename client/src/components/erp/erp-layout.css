@@ -173,6 +173,7 @@ h1, h2, h3, h4, h5, h6 {
   gap: 12px;
   cursor: pointer;
   transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
 .erp-sidebar__item:hover,
@@ -183,13 +184,24 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .erp-sidebar__item.is-active {
-  background-color: rgba(38, 77, 217, 0.08); /* 10% opacity primary */
+  background-color: rgba(38, 77, 217, 0.10); /* 10% opacity primary */
   color: var(--erp-primary);
   font-weight: 600;
 }
 
+.erp-sidebar__item.is-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  background-color: var(--erp-primary);
+  border-radius: 0 var(--erp-radius-sm) var(--erp-radius-sm) 0;
+}
+
 .erp-sidebar__item.is-active:hover {
-  background-color: rgba(38, 77, 217, 0.14);
+  background-color: rgba(38, 77, 217, 0.15);
   color: var(--erp-primary);
 }
 

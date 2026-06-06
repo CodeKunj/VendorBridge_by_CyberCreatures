@@ -156,6 +156,7 @@ const ApprovalWorkflowPage = () => {
   return (
     <EnterpriseErpLayout
       user={user}
+      activeNavId="approvals"
       onNavigate={handleNavigate}
       onLogout={async () => {
         await logout();

@@ -187,6 +187,7 @@ const SettingsPage = () => {
   return (
     <EnterpriseErpLayout
       user={user}
+      activeNavId="settings"
       onNavigate={handleNavigate}
       onLogout={async () => {
         await logout();

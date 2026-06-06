@@ -87,6 +87,7 @@ const ActivityLogsPage = () => {
   return (
     <EnterpriseErpLayout
       user={user}
+      activeNavId="activity-logs"
       onNavigate={handleNavigate}
       onLogout={handleLogout}
       onProfile={() => navigate('/dashboard')}

@@ -356,6 +356,7 @@ const ProcurementPage = () => {
   return (
     <EnterpriseErpLayout
       user={user}
+      activeNavId="rfqs"
       onNavigate={handleNavigate}
       onLogout={async () => {
         await logout();
