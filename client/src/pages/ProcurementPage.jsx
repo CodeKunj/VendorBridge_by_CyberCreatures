@@ -1,8 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { EnterpriseErpLayout } from '../components/erp';
 import { useAuth } from '../context/AuthContext';
 import { erpApi } from '../api/erpApi';
+import { 
+  Plus, 
+  Check, 
+  X, 
+  FileText, 
+  Layers, 
+  TrendingUp, 
+  Clock, 
+  Briefcase, 
+  Users, 
+  Eye, 
+  AlertCircle 
+} from 'lucide-react';
 
 const ProcurementPage = () => {
   const { user, logout } = useAuth();
@@ -90,21 +103,18 @@ const ProcurementPage = () => {
     setSubmittedQuotations([]);
     try {
       const res = await erpApi.rfqs.getById(rfq.id);
-      // Backend details include items, assignments, etc.
       setRfqItems(res.items || []);
       setAssignedVendors(res.assignedVendors || []);
 
       if (isProcurement || isManager) {
-        // Load quotes
         const qRes = await erpApi.quotations.list({ rfq_id: rfq.id });
         setSubmittedQuotations(qRes.data || []);
 
-        // Load comparison
         try {
           const compRes = await erpApi.quotations.compare(rfq.id);
           setComparison(compRes.data);
         } catch (cErr) {
-          // If no quotations or compare fails, suppress
+          // Suppress if no comparison
         }
       }
     } catch (err) {
@@ -112,7 +122,6 @@ const ProcurementPage = () => {
     }
   };
 
-  // RFQ Creation methods
   const handleAddRfqItemRow = () => {
     setNewRfq({
       ...newRfq,
@@ -193,9 +202,7 @@ const ProcurementPage = () => {
     }
   };
 
-  // Vendor Quotation Submission
   const handleOpenQuotationForm = () => {
-    // Populate form items matching RFQ items
     const formItems = rfqItems.map(item => ({
       rfq_item_id: item.id,
       item_name: item.item_name,
@@ -247,14 +254,12 @@ const ProcurementPage = () => {
     }
   };
 
-  // Approval Workflows
   const handleSubmitForApproval = async (quotationId) => {
     setError('');
     setSuccess('');
     try {
-      // Backend automatically sets level 1 approval flow
       await erpApi.approvals.decide({
-        id: quotationId, // In some setups quotation_id is linked directly
+        id: quotationId,
         rfq_id: selectedRfq.id,
         quotation_id: quotationId,
         status: 'pending',
@@ -263,8 +268,6 @@ const ProcurementPage = () => {
       setSuccess('Quotation submitted to management for approval');
       loadRfqDetails(selectedRfq);
     } catch (err) {
-      // In this specific mock database repo, submitting is done automatically 
-      // or we update status via backend trigger. Let's try inserting the record:
       try {
         await erpApi.approvals.decide({
           id: quotationId,
@@ -308,7 +311,6 @@ const ProcurementPage = () => {
     setError('');
     setSuccess('');
     try {
-      // Find the vendor linked to quotation
       const quote = submittedQuotations.find(q => q.id === quotationId);
       const res = await erpApi.purchaseOrders.create({
         rfq_id: rfqId,
@@ -324,12 +326,13 @@ const ProcurementPage = () => {
   };
 
   const handleNavigate = (item) => {
-    if (item.id === 'dashboard') {
-      navigate('/dashboard');
-    } else {
-      navigate(`/${item.id}`);
-    }
+    navigate(item.id === 'dashboard' ? '/dashboard' : `/${item.id}`);
   };
+
+  const breadcrumbs = useMemo(() => ([
+    { label: 'Home', href: '/' },
+    { label: 'Procurement' }
+  ]), []);
 
   return (
     <EnterpriseErpLayout
@@ -341,36 +344,30 @@ const ProcurementPage = () => {
       }}
       onProfile={() => navigate('/dashboard')}
       onSettings={() => navigate('/settings')}
+      breadcrumbs={breadcrumbs}
     >
-      <div className="erp-breadcrumbs">
-        <span className="erp-breadcrumbs__item">ERP Dashboard</span>
-        <span className="erp-breadcrumbs__separator">/</span>
-        <span className="erp-breadcrumbs__current">Procurement</span>
-      </div>
-
-      <div className="erp-content">
-        {error && <div className="erp-alert erp-alert--danger">{error}</div>}
-        {success && <div className="erp-alert erp-alert--success">{success}</div>}
+        {error && <div className="erp-alert erp-alert--danger"><AlertCircle size={15} /> {error}</div>}
+        {success && <div className="erp-alert erp-alert--success"><Check size={15} /> {success}</div>}
 
         {/* ROLE TABS */}
         {isManager && (
-          <div className="erp-tabs">
+          <div className="erp-tabs" style={{ marginBottom: '16px' }}>
             <button 
               className={`erp-tab ${activeTab === 'rfqs' ? 'is-active' : ''}`}
               onClick={() => { setActiveTab('rfqs'); setSelectedRfq(null); }}
             >
-              Requests for Quotation (RFQs)
+              <FileText size={14} /> Requests for Quotation (RFQs)
             </button>
             <button 
               className={`erp-tab ${activeTab === 'approvals' ? 'is-active' : ''}`}
               onClick={() => { setActiveTab('approvals'); setSelectedRfq(null); }}
             >
-              Pending Approval Workflows
+              <Layers size={14} /> Pending Approval Workflows
             </button>
           </div>
         )}
 
-        <div className="erp-grid-2" style={{ alignItems: 'start' }}>
+        <div className="erp-grid-2" style={{ alignItems: 'start', gap: '20px' }}>
           {/* RFQ MAIN PANEL */}
           {activeTab === 'rfqs' && (
             <section className="erp-card">
@@ -381,18 +378,18 @@ const ProcurementPage = () => {
                 </div>
                 {isProcurement && (
                   <button className="erp-btn erp-btn--primary" onClick={() => setShowRfqModal(true)}>
-                    + New RFQ
+                    <Plus size={16} /> New RFQ
                   </button>
                 )}
               </div>
 
               <div className="erp-card__body">
                 {loading ? (
-                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--erp-text-muted)' }}>
+                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--erp-outline)' }}>
                     Loading RFQs...
                   </div>
                 ) : rfqs.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--erp-text-muted)' }}>
+                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--erp-outline)' }}>
                     No RFQs available.
                   </div>
                 ) : (
@@ -411,7 +408,7 @@ const ProcurementPage = () => {
                           <tr 
                             key={rfq.id} 
                             onClick={() => loadRfqDetails(rfq)}
-                            style={{ cursor: 'pointer', background: selectedRfq?.id === rfq.id ? 'rgba(45,107,179,0.06)' : '' }}
+                            style={{ cursor: 'pointer', background: selectedRfq?.id === rfq.id ? 'var(--erp-surface-container)' : '' }}
                           >
                             <td><strong>{rfq.rfq_number}</strong></td>
                             <td>{rfq.title}</td>
@@ -446,11 +443,11 @@ const ProcurementPage = () => {
 
               <div className="erp-card__body">
                 {loading ? (
-                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--erp-text-muted)' }}>
+                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--erp-outline)' }}>
                     Loading approvals...
                   </div>
                 ) : approvals.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--erp-text-muted)' }}>
+                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--erp-outline)' }}>
                     No pending approval requests.
                   </div>
                 ) : (
@@ -504,16 +501,16 @@ const ProcurementPage = () => {
           <section className="erp-card">
             <div className="erp-card__header">
               <h2 className="erp-card__title">
-                {selectedRfq ? `Details: ${selectedRfq.rfq_number}` : 'Select an item to view details'}
+                {selectedRfq ? `Details: ${selectedRfq.rfq_number}` : 'Selection Panel'}
               </h2>
             </div>
             <div className="erp-card__body">
               {selectedRfq ? (
                 <div style={{ display: 'grid', gap: '20px' }}>
                   <div>
-                    <h3 style={{ margin: '0 0 6px 0', fontSize: '1.1rem' }}>{selectedRfq.title}</h3>
-                    <p style={{ color: 'var(--erp-text-muted)', margin: 0 }}>{selectedRfq.description}</p>
-                    <div style={{ marginTop: '10px', fontSize: '0.85rem', display: 'flex', gap: '16px' }}>
+                    <h3 style={{ margin: '0 0 6px 0', fontSize: '1.05rem', fontWeight: 600 }}>{selectedRfq.title}</h3>
+                    <p style={{ color: 'var(--erp-on-surface-variant)', fontSize: '0.88rem', margin: 0 }}>{selectedRfq.description}</p>
+                    <div style={{ marginTop: '12px', fontSize: '0.82rem', display: 'flex', gap: '16px', color: 'var(--erp-outline)' }}>
                       <span><strong>Deadline:</strong> {new Date(selectedRfq.deadline).toLocaleString()}</span>
                       <span>
                         <strong>Status:</strong>{' '}
@@ -525,7 +522,7 @@ const ProcurementPage = () => {
                   </div>
 
                   <div>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', textTransform: 'uppercase' }}>Line Items</h4>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--erp-outline)' }}>Line Items</h4>
                     <div className="erp-table-wrapper">
                       <table className="erp-table">
                         <thead>
@@ -553,7 +550,7 @@ const ProcurementPage = () => {
                   {/* VENDOR ASSIGNMENTS FOR OFFICERS */}
                   {isProcurement && (
                     <div>
-                      <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', textTransform: 'uppercase' }}>Assigned Suppliers</h4>
+                      <h4 style={{ margin: '0 0 8px 0', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--erp-outline)' }}>Assigned Suppliers</h4>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                         {assignedVendors.map(av => (
                           <span key={av.id} className="erp-badge erp-badge--info">
@@ -566,8 +563,8 @@ const ProcurementPage = () => {
 
                   {/* VENDOR BIDDING ACTION */}
                   {isVendor && selectedRfq.status === 'published' && (
-                    <div style={{ background: 'var(--erp-page)', padding: '16px', borderRadius: '12px', border: '1px solid var(--erp-border)' }}>
-                      <p style={{ margin: '0 0 10px 0', fontSize: '0.9rem', fontWeight: 600 }}>Quotation Options</p>
+                    <div style={{ background: 'var(--erp-surface-container-low)', padding: '16px', borderRadius: '12px', border: '1px solid var(--erp-outline-variant)' }}>
+                      <p style={{ margin: '0 0 10px 0', fontSize: '0.88rem', fontWeight: 600 }}>Submit Quote Proposal</p>
                       <button className="erp-btn erp-btn--primary" onClick={handleOpenQuotationForm}>
                         Submit Bid Quotation
                       </button>
@@ -577,9 +574,9 @@ const ProcurementPage = () => {
                   {/* PROCUREMENT OFFICERS QUOTATION COMPARISON PANEL */}
                   {(isProcurement || isManager) && (
                     <div>
-                      <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', textTransform: 'uppercase' }}>Bids & Quotations</h4>
+                      <h4 style={{ margin: '0 0 10px 0', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--erp-outline)' }}>Bids & Quotations</h4>
                       {submittedQuotations.length === 0 ? (
-                        <p style={{ color: 'var(--erp-text-muted)', fontSize: '0.85rem' }}>No quotation bids submitted yet.</p>
+                        <p style={{ color: 'var(--erp-outline)', fontSize: '0.85rem' }}>No quotation bids submitted yet.</p>
                       ) : (
                         <div style={{ display: 'grid', gap: '16px' }}>
                           <div className="erp-table-wrapper">
@@ -635,26 +632,26 @@ const ProcurementPage = () => {
 
                           {/* COMPARISON METRIC HIGHLIGHTS */}
                           {comparison && (
-                            <div style={{ background: '#f8fafc', border: '1px solid var(--erp-border)', borderRadius: '12px', padding: '14px' }}>
-                              <p style={{ margin: '0 0 10px 0', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--erp-blue-900)' }}>
+                            <div style={{ background: 'var(--erp-surface-dim)', border: '1px solid var(--erp-outline-variant)', borderRadius: '12px', padding: '14px' }}>
+                              <p style={{ margin: '0 0 10px 0', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--erp-primary)' }}>
                                 Quotation Compare Engine
                               </p>
                               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                                 <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '10px', borderRadius: '8px' }}>
-                                  <div style={{ fontSize: '0.75rem', color: '#047857', fontWeight: 700 }}>CHEAPEST BID</div>
-                                  <div style={{ fontSize: '1rem', fontWeight: 700, marginTop: '2px' }}>
+                                  <div style={{ fontSize: '0.72rem', color: '#047857', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}><TrendingUp size={12} /> CHEAPEST BID</div>
+                                  <div style={{ fontSize: '1rem', fontWeight: 700, marginTop: '2px', color: '#064e3b' }}>
                                     ${comparison.cheapest?.total_amount}
                                   </div>
-                                  <div style={{ fontSize: '0.75rem', color: 'var(--erp-text-muted)' }}>
+                                  <div style={{ fontSize: '0.72rem', color: '#047857' }}>
                                     {comparison.cheapest?.delivery_days} days delivery
                                   </div>
                                 </div>
                                 <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '10px', borderRadius: '8px' }}>
-                                  <div style={{ fontSize: '0.75rem', color: '#1d4ed8', fontWeight: 700 }}>FASTEST BID</div>
-                                  <div style={{ fontSize: '1rem', fontWeight: 700, marginTop: '2px' }}>
+                                  <div style={{ fontSize: '0.72rem', color: '#1d4ed8', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={12} /> FASTEST BID</div>
+                                  <div style={{ fontSize: '1rem', fontWeight: 700, marginTop: '2px', color: '#1e3a8a' }}>
                                     {comparison.fastest?.delivery_days} Days
                                   </div>
-                                  <div style={{ fontSize: '0.75rem', color: 'var(--erp-text-muted)' }}>
+                                  <div style={{ fontSize: '0.72rem', color: '#1d4ed8' }}>
                                     Cost: ${comparison.fastest?.total_amount}
                                   </div>
                                 </div>
@@ -674,8 +671,8 @@ const ProcurementPage = () => {
                   )}
                 </div>
               ) : (
-                <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--erp-text-muted)' }}>
-                  Select an RFQ from the table list to manage items, bids, and compare options.
+                <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--erp-outline)' }}>
+                  Select a registered RFQ to examine line items, pricing matrices, and bid entries.
                 </div>
               )}
             </div>
@@ -685,18 +682,18 @@ const ProcurementPage = () => {
         {/* CREATE RFQ MODAL */}
         {showRfqModal && (
           <div className="erp-modal-overlay">
-            <div className="erp-modal" style={{ width: '800px' }}>
+            <div className="erp-modal" style={{ width: 'min(780px, 95vw)' }}>
               <div className="erp-modal__header">
                 <h3 className="erp-card__title">Create Request for Quotation</h3>
                 <button 
-                  style={{ border: 0, background: 'transparent', fontSize: '1.5rem', cursor: 'pointer' }}
+                  style={{ border: 0, background: 'transparent', cursor: 'pointer' }}
                   onClick={() => setShowRfqModal(false)}
                 >
-                  &times;
+                  <X size={18} />
                 </button>
               </div>
               <form onSubmit={handleCreateRfq}>
-                <div className="erp-modal__body">
+                <div className="erp-modal__body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div className="erp-form">
                     <div className="erp-grid-2">
                       <div className="erp-form-group">
@@ -726,7 +723,7 @@ const ProcurementPage = () => {
                       <label className="erp-label">Project Description</label>
                       <textarea 
                         className="erp-textarea"
-                        placeholder="Detail procurement requirements, certifications, etc."
+                        placeholder="Detail procurement requirements, specifications, or compliance standards..."
                         value={newRfq.description} 
                         onChange={(e) => setNewRfq({ ...newRfq, description: e.target.value })}
                       />
@@ -779,11 +776,11 @@ const ProcurementPage = () => {
                             <button 
                               type="button" 
                               className="erp-btn erp-btn--danger"
-                              style={{ height: '44px', width: '44px', padding: 0 }}
+                              style={{ height: '36px', width: '36px', padding: 0 }}
                               onClick={() => handleRemoveRfqItemRow(index)}
                               disabled={newRfq.items.length <= 1}
                             >
-                              &times;
+                              <X size={14} />
                             </button>
                           </div>
                         ))}
@@ -791,14 +788,11 @@ const ProcurementPage = () => {
                     </div>
 
                     {/* ASSIGN VENDORS */}
-                    <div>
+                    <div style={{ marginTop: '16px' }}>
                       <label className="erp-label">Assign Suppliers</label>
-                      <p style={{ color: 'var(--erp-text-muted)', fontSize: '0.8rem', margin: '0 0 8px 0' }}>
-                        Select the suppliers who will receive notice to bid on this RFQ.
-                      </p>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '6px', maxHeight: '120px', overflowY: 'auto', border: '1px solid var(--erp-border)', padding: '10px', borderRadius: '12px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px', maxHeight: '120px', overflowY: 'auto', border: '1px solid var(--erp-outline-variant)', padding: '10px', borderRadius: 'var(--erp-radius-default)', background: 'var(--erp-surface-container-lowest)' }}>
                         {vendors.map(v => (
-                          <label key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.88rem' }}>
+                          <label key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', cursor: 'pointer' }}>
                             <input 
                               type="checkbox"
                               checked={newRfq.vendorIds.includes(v.id)}
@@ -827,18 +821,18 @@ const ProcurementPage = () => {
         {/* VENDOR SUBMIT BID QUOTATION MODAL */}
         {showQuotationModal && (
           <div className="erp-modal-overlay">
-            <div className="erp-modal">
+            <div className="erp-modal" style={{ width: 'min(640px, 95vw)' }}>
               <div className="erp-modal__header">
                 <h3 className="erp-card__title">Submit Quotation Bid</h3>
                 <button 
-                  style={{ border: 0, background: 'transparent', fontSize: '1.5rem', cursor: 'pointer' }}
+                  style={{ border: 0, background: 'transparent', cursor: 'pointer' }}
                   onClick={() => setShowQuotationModal(false)}
                 >
-                  &times;
+                  <X size={18} />
                 </button>
               </div>
               <form onSubmit={handleQuoteSubmit}>
-                <div className="erp-modal__body">
+                <div className="erp-modal__body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div className="erp-form">
                     <div className="erp-grid-2">
                       <div className="erp-form-group">
@@ -867,8 +861,8 @@ const ProcurementPage = () => {
                       <label className="erp-label">Items Pricing Matrix</label>
                       <div style={{ display: 'grid', gap: '8px' }}>
                         {newQuotation.items.map((item, idx) => (
-                          <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '6px', alignItems: 'center' }}>
-                            <div>{item.item_name} (Qty: {item.quantity})</div>
+                          <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr', gap: '10px', alignItems: 'center' }}>
+                            <div style={{ fontSize: '0.85rem' }}>{item.item_name} (Qty: {item.quantity})</div>
                             <input 
                               type="number" 
                               className="erp-input"
@@ -879,8 +873,8 @@ const ProcurementPage = () => {
                               step="any"
                               required
                             />
-                            <div style={{ textAlign: 'right', fontWeight: 600 }}>
-                              Total: ${item.total_price.toFixed(2)}
+                            <div style={{ textAlign: 'right', fontWeight: 600, fontSize: '0.85rem' }}>
+                              ${item.total_price.toFixed(2)}
                             </div>
                           </div>
                         ))}
@@ -891,7 +885,7 @@ const ProcurementPage = () => {
                       <label className="erp-label">Additional Bid Terms / Notes</label>
                       <textarea 
                         className="erp-textarea"
-                        placeholder="Detail warranties, supply contingencies, payment terms..."
+                        placeholder="Detail warranties, supply contingencies, or billing terms..."
                         value={newQuotation.notes}
                         onChange={(e) => setNewQuotation({ ...newQuotation, notes: e.target.value })}
                       />
@@ -914,18 +908,18 @@ const ProcurementPage = () => {
         {/* APPROVER DECISION MODAL */}
         {showDecisionModal && (
           <div className="erp-modal-overlay">
-            <div className="erp-modal">
+            <div className="erp-modal" style={{ width: 'min(500px, 95vw)' }}>
               <div className="erp-modal__header">
                 <h3 className="erp-card__title">Sign off Decision</h3>
                 <button 
-                  style={{ border: 0, background: 'transparent', fontSize: '1.5rem', cursor: 'pointer' }}
+                  style={{ border: 0, background: 'transparent', cursor: 'pointer' }}
                   onClick={() => setShowDecisionModal(false)}
                 >
-                  &times;
+                  <X size={18} />
                 </button>
               </div>
               <form onSubmit={handleSaveDecision}>
-                <div className="erp-modal__body">
+                <div className="erp-modal__body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div className="erp-form">
                     <div className="erp-form-group">
                       <label className="erp-label">Decision Status</label>
@@ -942,7 +936,7 @@ const ProcurementPage = () => {
                       <label className="erp-label">Remarks / Comments</label>
                       <textarea 
                         className="erp-textarea"
-                        placeholder="Provide reasons, adjustment instructions, or approval conditions..."
+                        placeholder="Provide reasoning or conditions for approval/rejection..."
                         value={decision.comments}
                         onChange={(e) => setDecision({ ...decision, comments: e.target.value })}
                         required
@@ -962,7 +956,6 @@ const ProcurementPage = () => {
             </div>
           </div>
         )}
-      </div>
     </EnterpriseErpLayout>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { AlertCircle } from 'lucide-react';
 
 const SignupPage = () => {
   const { signup } = useAuth();
@@ -37,11 +38,11 @@ const SignupPage = () => {
           <p className="auth-subtitle">Join VendorBridge Sourcing Network</p>
         </div>
 
-        {error ? (
-          <div className="erp-alert erp-alert--danger" role="alert">
-            {error}
+        {error && (
+          <div className="erp-alert erp-alert--danger" style={{ marginBottom: '16px' }}>
+            <AlertCircle size={15} /> {error}
           </div>
-        ) : null}
+        )}
 
         <form onSubmit={submit} className="auth-form">
           <div className="erp-form-group">

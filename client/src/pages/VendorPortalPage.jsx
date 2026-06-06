@@ -4,6 +4,18 @@ import { EnterpriseErpLayout } from '../components/erp';
 import { useAuth } from '../context/AuthContext';
 import { rfqApi } from '../api/rfqApi';
 import { quotationApi } from '../api/quotationApi';
+import { 
+  AlertCircle, 
+  Check, 
+  Send, 
+  FileText, 
+  Trash2, 
+  Edit2, 
+  Plus, 
+  RefreshCw, 
+  Paperclip,
+  X 
+} from 'lucide-react';
 
 const createQuotationItem = (productName = '', quantity = '') => ({
   product_name: productName,
@@ -37,11 +49,6 @@ const VendorPortalPage = () => {
   const [quotationForm, setQuotationForm] = useState(defaultQuotationForm);
   const [attachments, setAttachments] = useState([]);
 
-  const breadcrumbs = useMemo(() => ([
-    { label: 'Home', href: '/' },
-    { label: 'Vendor Portal' },
-  ]), []);
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -65,12 +72,7 @@ const VendorPortalPage = () => {
   }, []);
 
   const handleNavigate = (item) => {
-    if (item.id === 'vendor-portal') {
-      navigate('/vendor-portal');
-      return;
-    }
-
-    navigate(`/${item.id}`);
+    navigate(item.id === 'vendor-portal' ? '/vendor-portal' : `/${item.id}`);
   };
 
   const handleLogout = async () => {
@@ -79,48 +81,56 @@ const VendorPortalPage = () => {
   };
 
   const openNewQuotation = async (rfq) => {
-    const response = await rfqApi.getById(rfq.id);
-    const rfqDetails = response.data;
-    const firstItems = (rfqDetails.rfq_items || []).length > 0
-      ? rfqDetails.rfq_items.map((item) => createQuotationItem(item.product_name, item.quantity))
-      : [createQuotationItem()];
+    try {
+      const response = await rfqApi.getById(rfq.id);
+      const rfqDetails = response.data || response;
+      const firstItems = (rfqDetails.rfq_items || []).length > 0
+        ? rfqDetails.rfq_items.map((item) => createQuotationItem(item.product_name, item.quantity))
+        : [createQuotationItem()];
 
-    setSelectedRfq(rfqDetails);
-    setEditingQuotationId(null);
-    setQuotationForm({
-      rfq_id: rfqDetails.id,
-      total_amount: '',
-      delivery_days: '',
-      notes: '',
-      items: firstItems,
-    });
-    setAttachments([]);
-    setQuotationModalOpen(true);
+      setSelectedRfq(rfqDetails);
+      setEditingQuotationId(null);
+      setQuotationForm({
+        rfq_id: rfqDetails.id,
+        total_amount: '',
+        delivery_days: '',
+        notes: '',
+        items: firstItems,
+      });
+      setAttachments([]);
+      setQuotationModalOpen(true);
+    } catch (err) {
+      setError('Failed to fetch RFQ details.');
+    }
   };
 
   const openEditQuotation = async (quotation) => {
-    const response = await quotationApi.getById(quotation.id);
-    const details = response.data;
+    try {
+      const response = await quotationApi.getById(quotation.id);
+      const details = response.data || response;
 
-    setSelectedRfq(details.rfqs);
-    setEditingQuotationId(details.id);
-    setQuotationForm({
-      rfq_id: details.rfq_id,
-      total_amount: details.total_amount || '',
-      delivery_days: details.delivery_days || '',
-      notes: details.notes || '',
-      items: (details.quotation_items || []).length > 0
-        ? details.quotation_items.map((item) => ({
-            product_name: item.product_name || '',
-            quantity: item.quantity || '',
-            unit_price: item.unit_price || '',
-            delivery_time: item.delivery_time || '',
-            notes: item.notes || '',
-          }))
-        : [createQuotationItem()],
-    });
-    setAttachments([]);
-    setQuotationModalOpen(true);
+      setSelectedRfq(details.rfqs);
+      setEditingQuotationId(details.id);
+      setQuotationForm({
+        rfq_id: details.rfq_id,
+        total_amount: details.total_amount || '',
+        delivery_days: details.delivery_days || '',
+        notes: details.notes || '',
+        items: (details.quotation_items || []).length > 0
+          ? details.quotation_items.map((item) => ({
+              product_name: item.product_name || '',
+              quantity: item.quantity || '',
+              unit_price: item.unit_price || '',
+              delivery_time: item.delivery_time || '',
+              notes: item.notes || '',
+            }))
+          : [createQuotationItem()],
+      });
+      setAttachments([]);
+      setQuotationModalOpen(true);
+    } catch (err) {
+      setError('Failed to load quotation details.');
+    }
   };
 
   const updateItem = (index, field, value) => {
@@ -153,14 +163,17 @@ const VendorPortalPage = () => {
 
     attachments.forEach((file) => formData.append('attachments', file));
 
-    if (editingQuotationId) {
-      await quotationApi.update(editingQuotationId, formData);
-    } else {
-      await quotationApi.create(formData);
+    try {
+      if (editingQuotationId) {
+        await quotationApi.update(editingQuotationId, formData);
+      } else {
+        await quotationApi.create(formData);
+      }
+      setQuotationModalOpen(false);
+      await loadData();
+    } catch (err) {
+      setError(err.message || 'Failed to submit quotation bid');
     }
-
-    setQuotationModalOpen(false);
-    await loadData();
   };
 
   const withdrawQuotation = async (quotationId) => {
@@ -168,8 +181,12 @@ const VendorPortalPage = () => {
       return;
     }
 
-    await quotationApi.withdraw(quotationId);
-    await loadData();
+    try {
+      await quotationApi.withdraw(quotationId);
+      await loadData();
+    } catch (err) {
+      setError(err.message || 'Failed to withdraw quotation');
+    }
   };
 
   const portalStats = useMemo(() => ({
@@ -179,169 +196,281 @@ const VendorPortalPage = () => {
     submittedQuotations: quotations.filter((quotation) => quotation.status === 'submitted').length,
   }), [assignedRfqs, quotations]);
 
-  const actionItems = [
-    { id: 'refresh', label: 'Refresh Portal', onClick: loadData },
-    { id: 'rfqs', label: 'View RFQs', onClick: () => setActiveTab('rfqs') },
-    { id: 'quotations', label: 'My Quotations', onClick: () => setActiveTab('quotations') },
-  ];
+  const breadcrumbs = useMemo(() => ([
+    { label: 'Home', href: '/' },
+    { label: 'Vendor Portal' }
+  ]), []);
 
   return (
     <EnterpriseErpLayout
       user={user}
-      breadcrumbs={breadcrumbs}
-      activeNavId="vendor-portal"
-      notifications={[]}
       onNavigate={handleNavigate}
       onLogout={handleLogout}
       onProfile={() => navigate('/vendor-portal')}
       onSettings={() => navigate('/vendor-portal')}
+      breadcrumbs={breadcrumbs}
     >
-      <section className="erp-card">
-        <div className="erp-card__header">
+        <div className="erp-header-actions" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
           <div>
-            <h1 className="erp-card__title">Vendor Portal</h1>
-            <p className="erp-card__subtitle">View assigned RFQs, submit quotations, edit before deadline, upload attachments, and track status.</p>
+            <h1 className="erp-title">Vendor Portal</h1>
+            <p className="erp-subtitle">View assigned RFQs, submit quotations, upload attachments, and track bid status.</p>
           </div>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {actionItems.map((item) => (
-              <button key={item.id} type="button" className="erp-icon-button" style={{ width: 'auto', padding: '0 16px' }} onClick={item.onClick}>
-                {item.label}
-              </button>
-            ))}
-          </div>
+          <button className="erp-btn erp-btn--outline" type="button" onClick={loadData}>
+            <RefreshCw size={14} /> Refresh Portal
+          </button>
         </div>
 
-        <div className="erp-card__body" style={{ display: 'grid', gap: '18px' }}>
-          {error ? <div className="erp-notification-item" style={{ borderColor: '#ef4444' }}>{error}</div> : null}
+        {error && <div className="erp-alert erp-alert--danger"><AlertCircle size={15} /> {error}</div>}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '16px' }}>
-            <article className="erp-card"><div className="erp-card__body"><p className="erp-card__subtitle" style={{ marginTop: 0 }}>Assigned RFQs</p><h3 className="erp-card__title" style={{ fontSize: '1.8rem' }}>{portalStats.assignedRfqs}</h3></div></article>
-            <article className="erp-card"><div className="erp-card__body"><p className="erp-card__subtitle" style={{ marginTop: 0 }}>Open RFQs</p><h3 className="erp-card__title" style={{ fontSize: '1.8rem' }}>{portalStats.openRfqs}</h3></div></article>
-            <article className="erp-card"><div className="erp-card__body"><p className="erp-card__subtitle" style={{ marginTop: 0 }}>My Quotations</p><h3 className="erp-card__title" style={{ fontSize: '1.8rem' }}>{portalStats.myQuotations}</h3></div></article>
-            <article className="erp-card"><div className="erp-card__body"><p className="erp-card__subtitle" style={{ marginTop: 0 }}>Submitted</p><h3 className="erp-card__title" style={{ fontSize: '1.8rem' }}>{portalStats.submittedQuotations}</h3></div></article>
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {tabOptions.map((tab) => (
-              <button key={tab} type="button" className="erp-icon-button" style={{ width: 'auto', padding: '0 16px' }} onClick={() => setActiveTab(tab)}>
-                {tab === 'rfqs' ? 'Assigned RFQs' : 'My Quotations'}
-              </button>
-            ))}
-          </div>
-
-          {activeTab === 'rfqs' ? (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ textAlign: 'left', color: '#64748b' }}>
-                    <th style={{ padding: '12px' }}>RFQ Number</th>
-                    <th style={{ padding: '12px' }}>Title</th>
-                    <th style={{ padding: '12px' }}>Deadline</th>
-                    <th style={{ padding: '12px' }}>Status</th>
-                    <th style={{ padding: '12px' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr><td colSpan="5" style={{ padding: '16px' }}>Loading assigned RFQs...</td></tr>
-                  ) : assignedRfqs.length === 0 ? (
-                    <tr><td colSpan="5" style={{ padding: '16px' }}>No assigned RFQs available.</td></tr>
-                  ) : assignedRfqs.map((rfq) => (
-                    <tr key={rfq.id} style={{ borderTop: '1px solid #e5eef8' }}>
-                      <td style={{ padding: '12px' }}>{rfq.rfq_number}</td>
-                      <td style={{ padding: '12px' }}>{rfq.title}</td>
-                      <td style={{ padding: '12px' }}>{rfq.deadline ? new Date(rfq.deadline).toLocaleString() : '-'}</td>
-                      <td style={{ padding: '12px' }}>{rfq.status}</td>
-                      <td style={{ padding: '12px' }}>
-                        <button className="erp-icon-button" type="button" onClick={() => openNewQuotation(rfq)}>Submit Quotation</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {/* Stats Section */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+          <article className="erp-card">
+            <div className="erp-card__body">
+              <p className="erp-card__subtitle" style={{ marginTop: 0 }}>Assigned RFQs</p>
+              <h3 className="erp-card__title" style={{ fontSize: '1.8rem', color: 'var(--erp-primary)', fontWeight: 700 }}>{portalStats.assignedRfqs}</h3>
             </div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ textAlign: 'left', color: '#64748b' }}>
-                    <th style={{ padding: '12px' }}>RFQ</th>
-                    <th style={{ padding: '12px' }}>Total Amount</th>
-                    <th style={{ padding: '12px' }}>Delivery</th>
-                    <th style={{ padding: '12px' }}>Status</th>
-                    <th style={{ padding: '12px' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr><td colSpan="5" style={{ padding: '16px' }}>Loading quotations...</td></tr>
-                  ) : quotations.length === 0 ? (
-                    <tr><td colSpan="5" style={{ padding: '16px' }}>No quotations submitted yet.</td></tr>
-                  ) : quotations.map((quotation) => (
-                    <tr key={quotation.id} style={{ borderTop: '1px solid #e5eef8' }}>
-                      <td style={{ padding: '12px' }}>{quotation.rfqs?.rfq_number} - {quotation.rfqs?.title}</td>
-                      <td style={{ padding: '12px' }}>{quotation.total_amount || '-'}</td>
-                      <td style={{ padding: '12px' }}>{quotation.delivery_days ? `${quotation.delivery_days} days` : '-'}</td>
-                      <td style={{ padding: '12px' }}>{quotation.status}</td>
-                      <td style={{ padding: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        <button className="erp-icon-button" type="button" onClick={() => openEditQuotation(quotation)}>Edit</button>
-                        <button className="erp-icon-button" type="button" onClick={() => withdrawQuotation(quotation.id)}>Withdraw</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          </article>
+          <article className="erp-card">
+            <div className="erp-card__body">
+              <p className="erp-card__subtitle" style={{ marginTop: 0 }}>Open RFQs</p>
+              <h3 className="erp-card__title" style={{ fontSize: '1.8rem', color: 'var(--erp-primary)', fontWeight: 700 }}>{portalStats.openRfqs}</h3>
             </div>
-          )}
+          </article>
+          <article className="erp-card">
+            <div className="erp-card__body">
+              <p className="erp-card__subtitle" style={{ marginTop: 0 }}>My Quotations</p>
+              <h3 className="erp-card__title" style={{ fontSize: '1.8rem', color: 'var(--erp-secondary)', fontWeight: 700 }}>{portalStats.myQuotations}</h3>
+            </div>
+          </article>
+          <article className="erp-card">
+            <div className="erp-card__body">
+              <p className="erp-card__subtitle" style={{ marginTop: 0 }}>Submitted Bids</p>
+              <h3 className="erp-card__title" style={{ fontSize: '1.8rem', color: 'var(--erp-success)', fontWeight: 700 }}>{portalStats.submittedQuotations}</h3>
+            </div>
+          </article>
         </div>
-      </section>
 
-      {quotationModalOpen ? <div className="erp-layout-overlay" onClick={() => setQuotationModalOpen(false)} aria-hidden="true" /> : null}
+        {/* Tab Controls */}
+        <div className="erp-tabs" style={{ marginBottom: '20px' }}>
+          <button 
+            className={`erp-tab ${activeTab === 'rfqs' ? 'is-active' : ''}`} 
+            onClick={() => setActiveTab('rfqs')}
+          >
+            Assigned RFQ List
+          </button>
+          <button 
+            className={`erp-tab ${activeTab === 'quotations' ? 'is-active' : ''}`} 
+            onClick={() => setActiveTab('quotations')}
+          >
+            My Submitted Bids
+          </button>
+        </div>
 
-      {quotationModalOpen ? (
-        <section className="erp-notification-panel" style={{ width: 'min(980px, calc(100vw - 32px))', right: '50%', transform: 'translateX(50%)', top: '40px' }}>
-          <div className="erp-notification-panel__header">
-            <div>
-              <h2 className="erp-notification-panel__title">{editingQuotationId ? 'Edit Quotation' : 'Submit Quotation'}</h2>
-              <p className="erp-card__subtitle">
-                {selectedRfq ? `${selectedRfq.rfq_number} - ${selectedRfq.title}` : 'Complete your pricing and delivery terms.'}
-              </p>
+        {/* Tab Content */}
+        {activeTab === 'rfqs' ? (
+          <section className="erp-card">
+            <div className="erp-card__body" style={{ padding: 0 }}>
+              <div className="erp-table-wrapper" style={{ border: 0, borderRadius: 0 }}>
+                <table className="erp-table">
+                  <thead>
+                    <tr>
+                      <th>RFQ Number</th>
+                      <th>RFQ Title</th>
+                      <th>Submission Deadline</th>
+                      <th>Status</th>
+                      <th style={{ textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loading ? (
+                      <tr><td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: 'var(--erp-outline)' }}>Loading assigned RFQs...</td></tr>
+                    ) : assignedRfqs.length === 0 ? (
+                      <tr><td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: 'var(--erp-outline)' }}>No assigned RFQs available.</td></tr>
+                    ) : assignedRfqs.map((rfq) => (
+                      <tr key={rfq.id}>
+                        <td><span className="erp-badge erp-badge--draft">{rfq.rfq_number}</span></td>
+                        <td style={{ fontWeight: 600 }}>{rfq.title}</td>
+                        <td>{rfq.deadline ? new Date(rfq.deadline).toLocaleString() : '-'}</td>
+                        <td>
+                          <span className="erp-badge erp-badge--info">
+                            {rfq.status}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <button 
+                            className="erp-btn erp-btn--primary" 
+                            type="button" 
+                            style={{ padding: '4px 10px', height: '28px', fontSize: '0.75rem' }} 
+                            onClick={() => openNewQuotation(rfq)}
+                          >
+                            <Send size={12} /> Submit Bid
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <button className="erp-icon-button" type="button" onClick={() => setQuotationModalOpen(false)}>×</button>
-          </div>
-
-          <form onSubmit={submitQuotation} className="erp-notification-list" style={{ display: 'grid', gap: '12px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '12px' }}>
-              <input className="erp-search__input" value={quotationForm.rfq_id} disabled placeholder="RFQ" />
-              <input className="erp-search__input" placeholder="Total Amount" type="number" min="0" value={quotationForm.total_amount} onChange={(event) => setQuotationForm((prev) => ({ ...prev, total_amount: event.target.value }))} />
-              <input className="erp-search__input" placeholder="Delivery Time (days)" type="number" min="1" value={quotationForm.delivery_days} onChange={(event) => setQuotationForm((prev) => ({ ...prev, delivery_days: event.target.value }))} />
-              <input className="erp-search__input" type="file" multiple onChange={(event) => setAttachments(Array.from(event.target.files || []))} />
+          </section>
+        ) : (
+          <section className="erp-card">
+            <div className="erp-card__body" style={{ padding: 0 }}>
+              <div className="erp-table-wrapper" style={{ border: 0, borderRadius: 0 }}>
+                <table className="erp-table">
+                  <thead>
+                    <tr>
+                      <th>RFQ Reference</th>
+                      <th>Quoted Total</th>
+                      <th>Delivery Days</th>
+                      <th>Bid Status</th>
+                      <th style={{ textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loading ? (
+                      <tr><td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: 'var(--erp-outline)' }}>Loading quotations...</td></tr>
+                    ) : quotations.length === 0 ? (
+                      <tr><td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: 'var(--erp-outline)' }}>No quotations submitted yet.</td></tr>
+                    ) : quotations.map((quotation) => (
+                      <tr key={quotation.id}>
+                        <td>
+                          <div style={{ fontWeight: 600 }}>{quotation.rfqs?.rfq_number}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--erp-outline)' }}>{quotation.rfqs?.title}</div>
+                        </td>
+                        <td><strong>${parseFloat(quotation.total_amount || 0).toFixed(2)}</strong></td>
+                        <td>{quotation.delivery_days ? `${quotation.delivery_days} days` : '-'}</td>
+                        <td>
+                          <span className={`erp-badge erp-badge--${
+                            quotation.status === 'approved' ? 'success' : quotation.status === 'rejected' ? 'danger' : 'warning'
+                          }`}>
+                            {quotation.status}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <div style={{ display: 'inline-flex', gap: '8px', justifyContent: 'flex-end' }}>
+                            <button 
+                              className="erp-btn erp-btn--outline" 
+                              style={{ padding: '4px 8px', height: '28px', fontSize: '0.75rem' }} 
+                              onClick={() => openEditQuotation(quotation)}
+                            >
+                              <Edit2 size={12} /> Edit
+                            </button>
+                            <button 
+                              className="erp-btn erp-btn--danger" 
+                              style={{ padding: '4px 8px', height: '28px', fontSize: '0.75rem' }} 
+                              onClick={() => withdrawQuotation(quotation.id)}
+                            >
+                              <Trash2 size={12} /> Withdraw
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
+          </section>
+        )}
 
-            <textarea className="erp-search__input" style={{ minHeight: '90px', paddingTop: '12px' }} placeholder="Notes" value={quotationForm.notes} onChange={(event) => setQuotationForm((prev) => ({ ...prev, notes: event.target.value }))} />
+      {/* SUBMIT QUOTATION MODAL */}
+      {quotationModalOpen && (
+        <div className="erp-modal-overlay">
+          <div className="erp-modal" style={{ width: 'min(900px, 95vw)', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="erp-modal__header">
+              <h3 className="erp-card__title">{editingQuotationId ? 'Modify Bid Offer' : 'Submit Quotation Bid'}</h3>
+              <button style={{ border: 0, background: 'transparent', cursor: 'pointer' }} onClick={() => setQuotationModalOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            
+            <form onSubmit={submitQuotation}>
+              <div className="erp-modal__body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--erp-outline)' }}>
+                  RFQ: <strong>{selectedRfq?.rfq_number} - {selectedRfq?.title}</strong>
+                </p>
 
-            <div style={{ display: 'grid', gap: '12px' }}>
-              <div className="erp-card__title" style={{ fontSize: '1rem' }}>Quotation Items</div>
-              {quotationForm.items.map((item, index) => (
-                <div key={`${index}-${item.product_name}`} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr auto', gap: '8px', alignItems: 'center' }}>
-                  <input className="erp-search__input" placeholder="Product" value={item.product_name} onChange={(event) => updateItem(index, 'product_name', event.target.value)} required />
-                  <input className="erp-search__input" placeholder="Quantity" type="number" min="1" value={item.quantity} onChange={(event) => updateItem(index, 'quantity', event.target.value)} required />
-                  <input className="erp-search__input" placeholder="Unit Price" type="number" min="0" value={item.unit_price} onChange={(event) => updateItem(index, 'unit_price', event.target.value)} required />
-                  <input className="erp-search__input" placeholder="Delivery Time" type="number" min="1" value={item.delivery_time} onChange={(event) => updateItem(index, 'delivery_time', event.target.value)} />
-                  <input className="erp-search__input" placeholder="Item Notes" value={item.notes} onChange={(event) => updateItem(index, 'notes', event.target.value)} />
-                  <button className="erp-icon-button" type="button" onClick={() => removeItem(index)}>Remove</button>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                  <div className="erp-form-group" style={{ margin: 0 }}>
+                    <label className="erp-label">Total Bid Amount ($)</label>
+                    <input 
+                      className="erp-input" 
+                      placeholder="e.g. 2400" 
+                      type="number" 
+                      min="0" 
+                      value={quotationForm.total_amount} 
+                      onChange={(e) => setQuotationForm((prev) => ({ ...prev, total_amount: e.target.value }))} 
+                      required
+                    />
+                  </div>
+                  <div className="erp-form-group" style={{ margin: 0 }}>
+                    <label className="erp-label">Delivery Completion (Days)</label>
+                    <input 
+                      className="erp-input" 
+                      placeholder="e.g. 7" 
+                      type="number" 
+                      min="1" 
+                      value={quotationForm.delivery_days} 
+                      onChange={(e) => setQuotationForm((prev) => ({ ...prev, delivery_days: e.target.value }))} 
+                      required
+                    />
+                  </div>
+                  <div className="erp-form-group" style={{ margin: 0 }}>
+                    <label className="erp-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Paperclip size={13} /> Attach Proposal Documents
+                    </label>
+                    <input 
+                      className="erp-input" 
+                      type="file" 
+                      multiple 
+                      onChange={(e) => setAttachments(Array.from(e.target.files || []))} 
+                    />
+                  </div>
                 </div>
-              ))}
-              <button className="erp-icon-button" type="button" style={{ width: 'fit-content' }} onClick={addItem}>+ Add Item</button>
-            </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-              <button className="erp-icon-button" type="button" onClick={() => setQuotationModalOpen(false)}>Cancel</button>
-              <button className="erp-icon-button" type="submit">Save Quotation</button>
-            </div>
-          </form>
-        </section>
-      ) : null}
+                <div className="erp-form-group">
+                  <label className="erp-label">Scope Notes / Remarks</label>
+                  <textarea 
+                    className="erp-textarea" 
+                    placeholder="Provide additional terms, shipping conditions, etc..." 
+                    value={quotationForm.notes} 
+                    onChange={(e) => setQuotationForm((prev) => ({ ...prev, notes: e.target.value }))} 
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}>Quoted Items List</h4>
+                  {quotationForm.items.map((item, index) => (
+                    <div key={`${index}`} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 2fr auto', gap: '8px', alignItems: 'center' }}>
+                      <input className="erp-input" placeholder="Product" value={item.product_name} onChange={(e) => updateItem(index, 'product_name', e.target.value)} required />
+                      <input className="erp-input" placeholder="Qty" type="number" min="1" value={item.quantity} onChange={(e) => updateItem(index, 'quantity', e.target.value)} required />
+                      <input className="erp-input" placeholder="Unit $" type="number" min="0" value={item.unit_price} onChange={(e) => updateItem(index, 'unit_price', e.target.value)} required />
+                      <input className="erp-input" placeholder="Days" type="number" min="1" value={item.delivery_time} onChange={(e) => updateItem(index, 'delivery_time', e.target.value)} />
+                      <input className="erp-input" placeholder="Item Remarks" value={item.notes} onChange={(e) => updateItem(index, 'notes', e.target.value)} />
+                      <button className="erp-btn erp-btn--danger" style={{ height: '36px', padding: '0 10px' }} type="button" onClick={() => removeItem(index)}>
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                  <button className="erp-btn erp-btn--outline" type="button" style={{ width: 'fit-content' }} onClick={addItem}>
+                    <Plus size={13} /> Add Item Line
+                  </button>
+                </div>
+              </div>
+
+              <div className="erp-modal__footer">
+                <button type="button" className="erp-btn erp-btn--outline" onClick={() => setQuotationModalOpen(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="erp-btn erp-btn--primary">
+                  Submit Bid Proposal
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </EnterpriseErpLayout>
   );
 };

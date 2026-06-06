@@ -3,6 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { EnterpriseErpLayout } from '../components/erp';
 import { useAuth } from '../context/AuthContext';
 import { erpApi } from '../api/erpApi';
+import { 
+  FileText, 
+  Printer, 
+  Download, 
+  Plus, 
+  X, 
+  AlertCircle, 
+  Check,
+  Building,
+  Mail,
+  Phone,
+  DollarSign
+} from 'lucide-react';
 
 const PurchaseOrdersPage = () => {
   const { user, logout } = useAuth();
@@ -73,9 +86,7 @@ const PurchaseOrdersPage = () => {
     setTotalAmount(0);
     
     try {
-      // Load RFQs and Quotations to let user pick
       const rfqsRes = await erpApi.rfqs.list({ limit: 100 });
-      // Filter RFQs that are closed/published (ready for PO)
       setAvailableRfqs(rfqsRes.data || []);
 
       const quotationsRes = await erpApi.quotations.list({ limit: 100 });
@@ -87,14 +98,12 @@ const PurchaseOrdersPage = () => {
 
   const handleRfqChange = (rfqId) => {
     setSelectedRfqId(rfqId);
-    // Find matching quotations for this RFQ
     const matched = availableQuotations.find(q => q.rfq_id === rfqId && q.status === 'accepted');
     if (matched) {
       setSelectedQuotationId(matched.id);
       setSelectedVendorId(matched.vendor_id);
       setTotalAmount(matched.total_amount);
     } else {
-      // Look for any quotation
       const anyMatched = availableQuotations.find(q => q.rfq_id === rfqId);
       if (anyMatched) {
         setSelectedQuotationId(anyMatched.id);
@@ -150,8 +159,6 @@ const PurchaseOrdersPage = () => {
   const handleDownloadPdf = (poId) => {
     const url = erpApi.purchaseOrders.downloadPdfUrl(poId);
     const token = localStorage.getItem('vendorbridge.accessToken');
-    
-    // We can open in new window or download
     const win = window.open(`${url}?access_token=${token}`, '_blank');
     if (win) win.focus();
   };
@@ -186,12 +193,13 @@ const PurchaseOrdersPage = () => {
   };
 
   const handleNavigate = (item) => {
-    if (item.id === 'dashboard') {
-      navigate('/dashboard');
-    } else {
-      navigate(`/${item.id}`);
-    }
+    navigate(item.id === 'dashboard' ? '/dashboard' : `/${item.id}`);
   };
+
+  const breadcrumbs = useMemo(() => ([
+    { label: 'Home', href: '/' },
+    { label: 'Purchase Orders' }
+  ]), []);
 
   return (
     <EnterpriseErpLayout
@@ -203,31 +211,25 @@ const PurchaseOrdersPage = () => {
       }}
       onProfile={() => navigate('/dashboard')}
       onSettings={() => navigate('/settings')}
+      breadcrumbs={breadcrumbs}
     >
-      <div className="erp-breadcrumbs">
-        <span className="erp-breadcrumbs__item">ERP Portal</span>
-        <span className="erp-breadcrumbs__separator">/</span>
-        <span className="erp-breadcrumbs__current">Purchase Orders</span>
-      </div>
-
-      <div className="erp-content">
-        <div className="erp-header-actions" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'center' }}>
+      <div className="erp-header-actions" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'center' }}>
           <div>
-            <h1 className="erp-title" style={{ margin: 0 }}>Purchase Order (PO) Management</h1>
-            <p className="erp-subtitle" style={{ margin: '4px 0 0 0' }}>Issue, view, download, and print official business purchase orders.</p>
+            <h1 className="erp-title" style={{ margin: 0 }}>Purchase Orders</h1>
+            <p className="erp-subtitle" style={{ margin: '4px 0 0 0' }}>Issue, view, download, and print official procurement POs.</p>
           </div>
           
           {(user?.role === 'procurement_officer' || user?.role === 'admin') && (
             <button className="erp-btn erp-btn--primary" onClick={openGenerateModal}>
-              Generate PO
+              <Plus size={16} /> Generate PO
             </button>
           )}
         </div>
 
-        {error && <div className="erp-alert erp-alert--danger">{error}</div>}
-        {success && <div className="erp-alert erp-alert--success">{success}</div>}
+        {error && <div className="erp-alert erp-alert--danger"><AlertCircle size={15} /> {error}</div>}
+        {success && <div className="erp-alert erp-alert--success"><Check size={15} /> {success}</div>}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', alignItems: 'start' }}>
+        <div className="erp-grid-2" style={{ alignItems: 'start' }}>
           
           {/* LEFT PANEL: POS LIST */}
           <section className="erp-card">
@@ -236,23 +238,23 @@ const PurchaseOrdersPage = () => {
             </div>
             <div className="erp-card__body">
               {loading ? (
-                <p style={{ textAlign: 'center', color: 'var(--erp-text-muted)' }}>Loading PO records...</p>
+                <p style={{ textAlign: 'center', color: 'var(--erp-outline)', padding: '20px' }}>Loading PO records...</p>
               ) : pos.length === 0 ? (
-                <div style={{ padding: '32px', textAlign: 'center', color: 'var(--erp-text-muted)' }}>
-                  No Purchase Orders found. Click "Generate PO" to create one.
+                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--erp-outline)' }}>
+                  No Purchase Orders found.
                 </div>
               ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                <div className="erp-table-wrapper">
+                  <table className="erp-table">
                     <thead>
-                      <tr style={{ textAlign: 'left', color: 'var(--erp-text-muted)', borderBottom: '1px solid var(--erp-border)' }}>
-                        <th style={{ padding: '12px' }}>PO Number</th>
-                        <th style={{ padding: '12px' }}>RFQ Reference</th>
-                        <th style={{ padding: '12px' }}>Supplier / Vendor</th>
-                        <th style={{ padding: '12px' }}>Total Cost</th>
-                        <th style={{ padding: '12px' }}>Date Issued</th>
-                        <th style={{ padding: '12px' }}>Status</th>
-                        <th style={{ padding: '12px', textAlign: 'right' }}>Actions</th>
+                      <tr>
+                        <th>PO Number</th>
+                        <th>RFQ Ref</th>
+                        <th>Supplier</th>
+                        <th>Total Cost</th>
+                        <th>Date Issued</th>
+                        <th>Status</th>
+                        <th style={{ textAlign: 'right' }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -260,34 +262,31 @@ const PurchaseOrdersPage = () => {
                         <tr 
                           key={po.id} 
                           style={{ 
-                            borderBottom: '1px solid var(--erp-border)',
-                            background: selectedPo?.id === po.id ? '#f8fafc' : 'transparent',
+                            background: selectedPo?.id === po.id ? 'var(--erp-surface-container)' : 'transparent',
                             cursor: 'pointer' 
                           }}
                           onClick={() => loadDetails(po)}
                         >
-                          <td style={{ padding: '12px', fontWeight: 600 }}>{po.po_number}</td>
-                          <td style={{ padding: '12px' }}>{po.rfqs?.rfq_number || '-'}</td>
-                          <td style={{ padding: '12px' }}>{po.vendors?.company_name || 'N/A'}</td>
-                          <td style={{ padding: '12px', fontWeight: 600 }}>${parseFloat(po.total_amount || 0).toFixed(2)}</td>
-                          <td style={{ padding: '12px' }}>
+                          <td><strong>{po.po_number}</strong></td>
+                          <td>{po.rfqs?.rfq_number || '-'}</td>
+                          <td>{po.vendors?.company_name || 'N/A'}</td>
+                          <td><strong>${parseFloat(po.total_amount || 0).toFixed(2)}</strong></td>
+                          <td>
                             {po.issued_at ? new Date(po.issued_at).toLocaleDateString() : new Date(po.created_at).toLocaleDateString()}
                           </td>
-                          <td style={{ padding: '12px' }}>
+                          <td>
                             <span className={`erp-badge erp-badge--${po.status === 'completed' ? 'success' : po.status === 'cancelled' ? 'danger' : 'info'}`}>
                               {po.status}
                             </span>
                           </td>
-                          <td style={{ padding: '12px', textAlign: 'right' }} onClick={e => e.stopPropagation()}>
-                            <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                              <button 
-                                className="erp-icon-button" 
-                                title="Download PDF Document"
-                                onClick={() => handleDownloadPdf(po.id)}
-                              >
-                                PDF
-                              </button>
-                            </div>
+                          <td style={{ textAlign: 'right' }} onClick={e => e.stopPropagation()}>
+                            <button 
+                              className="erp-btn erp-btn--secondary" 
+                              style={{ height: '28px', padding: '0 8px', fontSize: '0.72rem' }}
+                              onClick={() => handleDownloadPdf(po.id)}
+                            >
+                              <Download size={11} /> PDF
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -298,28 +297,27 @@ const PurchaseOrdersPage = () => {
             </div>
           </section>
 
-          {/* RIGHT PANEL: SELECTED PO DETAILS & PRINT PREVIEW */}
+          {/* RIGHT PANEL: SELECTED PO DETAILS */}
           <section className="erp-card" style={{ position: 'sticky', top: '16px' }}>
             <div className="erp-card__header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h2 className="erp-card__title">PO Inspector</h2>
-                <p className="erp-card__subtitle">Details & direct print action utilities.</p>
               </div>
               {selectedPoDetails && (
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button 
-                    className="erp-btn erp-btn--secondary" 
-                    style={{ padding: '6px 12px', fontSize: '0.82rem' }}
+                    className="erp-btn erp-btn--outline" 
+                    style={{ padding: '6px 10px', fontSize: '0.8rem', height: '32px' }}
                     onClick={handlePrint}
                   >
-                    Print
+                    <Printer size={13} /> Print
                   </button>
                   <button 
                     className="erp-btn erp-btn--primary" 
-                    style={{ padding: '6px 12px', fontSize: '0.82rem' }}
+                    style={{ padding: '6px 10px', fontSize: '0.8rem', height: '32px' }}
                     onClick={() => handleDownloadPdf(selectedPoDetails.id)}
                   >
-                    PDF
+                    <Download size={13} /> PDF
                   </button>
                 </div>
               )}
@@ -327,62 +325,61 @@ const PurchaseOrdersPage = () => {
             
             <div className="erp-card__body">
               {loadingDetails ? (
-                <p style={{ textAlign: 'center', color: 'var(--erp-text-muted)' }}>Loading PO details...</p>
+                <p style={{ textAlign: 'center', color: 'var(--erp-outline)', padding: '20px' }}>Loading PO details...</p>
               ) : selectedPoDetails ? (
                 <div>
-                  {/* PRINT PREVIEW TARGET */}
                   <div ref={printAreaRef}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid var(--erp-border)', paddingBottom: '12px', marginBottom: '16px' }}>
                       <div>
-                        <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--erp-primary)' }}>Purchase Order</h3>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--erp-text-muted)', marginTop: '4px' }}>
+                        <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--erp-primary)', fontWeight: 600 }}>Purchase Order</h3>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--erp-outline)', marginTop: '4px' }}>
                           Number: <strong>{selectedPoDetails.po_number}</strong>
                         </div>
                       </div>
-                      <div style={{ textAlign: 'right', fontSize: '0.85rem' }}>
+                      <div style={{ textAlign: 'right', fontSize: '0.8rem' }}>
                         <div>Issued: {new Date(selectedPoDetails.issued_at || selectedPoDetails.created_at).toLocaleDateString()}</div>
                         <div style={{ marginTop: '4px' }}>
-                          Status: <span style={{ textTransform: 'uppercase', fontWeight: 600 }}>{selectedPoDetails.status}</span>
+                          Status: <span style={{ textTransform: 'uppercase', fontWeight: 700, color: 'var(--erp-primary)' }}>{selectedPoDetails.status}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px', fontSize: '0.88rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px', fontSize: '0.82rem' }}>
                       <div>
-                        <h4 style={{ margin: '0 0 6px 0', fontSize: '0.9rem', color: 'var(--erp-text-muted)' }}>Vendor / Supplier:</h4>
+                        <h4 style={{ margin: '0 0 6px 0', fontSize: '0.78rem', textTransform: 'uppercase', color: 'var(--erp-outline)', fontWeight: 700 }}>Supplier:</h4>
                         <div><strong>{selectedPoDetails.vendors?.company_name}</strong></div>
                         <div>Code: {selectedPoDetails.vendors?.vendor_code}</div>
                         <div>Email: {selectedPoDetails.vendors?.email}</div>
                         <div>Phone: {selectedPoDetails.vendors?.phone}</div>
                       </div>
                       <div>
-                        <h4 style={{ margin: '0 0 6px 0', fontSize: '0.9rem', color: 'var(--erp-text-muted)' }}>Buyer / Officer:</h4>
+                        <h4 style={{ margin: '0 0 6px 0', fontSize: '0.78rem', textTransform: 'uppercase', color: 'var(--erp-outline)', fontWeight: 700 }}>Buyer Representative:</h4>
                         <div><strong>{selectedPoDetails.buyer?.name || 'ERP Procurement Agent'}</strong></div>
                         <div>Email: {selectedPoDetails.buyer?.email}</div>
                         <div>Shipment Address: VendorBridge HQ</div>
                       </div>
                     </div>
 
-                    <h4 style={{ margin: '16px 0 8px 0', fontSize: '0.9rem', textTransform: 'uppercase', color: 'var(--erp-text-muted)' }}>Line Items Breakdown</h4>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', marginBottom: '16px' }}>
+                    <h4 style={{ margin: '16px 0 8px 0', fontSize: '0.78rem', textTransform: 'uppercase', color: 'var(--erp-outline)', fontWeight: 700 }}>Line Items Breakdown</h4>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', marginBottom: '16px' }}>
                       <thead>
-                        <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--erp-border)', textAlign: 'left' }}>
-                          <th style={{ padding: '6px' }}>Item</th>
-                          <th style={{ padding: '6px', textAlign: 'right' }}>Qty</th>
-                          <th style={{ padding: '6px', textAlign: 'right' }}>Unit ($)</th>
-                          <th style={{ padding: '6px', textAlign: 'right' }}>Total ($)</th>
+                        <tr style={{ background: 'var(--erp-surface-container-low)', borderBottom: '1px solid var(--erp-border)', textAlign: 'left' }}>
+                          <th style={{ padding: '8px' }}>Item</th>
+                          <th style={{ padding: '8px', textAlign: 'right' }}>Qty</th>
+                          <th style={{ padding: '8px', textAlign: 'right' }}>Unit ($)</th>
+                          <th style={{ padding: '8px', textAlign: 'right' }}>Total ($)</th>
                         </tr>
                       </thead>
                       <tbody>
                         {selectedPoDetails.items?.map((item, idx) => (
                           <tr key={idx} style={{ borderBottom: '1px solid var(--erp-border)' }}>
-                            <td style={{ padding: '6px' }}>
-                              <div>{item.item_name}</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--erp-text-muted)' }}>{item.description}</div>
+                            <td style={{ padding: '8px' }}>
+                              <div><strong>{item.item_name}</strong></div>
+                              <div style={{ fontSize: '0.72rem', color: 'var(--erp-outline)' }}>{item.description}</div>
                             </td>
-                            <td style={{ padding: '6px', textAlign: 'right' }}>{item.quantity}</td>
-                            <td style={{ padding: '6px', textAlign: 'right' }}>${parseFloat(item.unit_price || 0).toFixed(2)}</td>
-                            <td style={{ padding: '6px', textAlign: 'right' }}>${parseFloat(item.total_price || 0).toFixed(2)}</td>
+                            <td style={{ padding: '8px', textAlign: 'right' }}>{item.quantity}</td>
+                            <td style={{ padding: '8px', textAlign: 'right' }}>${parseFloat(item.unit_price || 0).toFixed(2)}</td>
+                            <td style={{ padding: '8px', textAlign: 'right' }}>${parseFloat(item.total_price || 0).toFixed(2)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -390,7 +387,7 @@ const PurchaseOrdersPage = () => {
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '2px solid var(--erp-border)', paddingTop: '10px' }}>
                       <div style={{ textAlign: 'right' }}>
-                        <span style={{ color: 'var(--erp-text-muted)', fontSize: '0.88rem' }}>Total Amount:</span>
+                        <span style={{ color: 'var(--erp-outline)', fontSize: '0.82rem' }}>Total Amount:</span>
                         <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--erp-primary)', marginTop: '2px' }}>
                           ${parseFloat(selectedPoDetails.total_amount || 0).toFixed(2)}
                         </div>
@@ -399,106 +396,83 @@ const PurchaseOrdersPage = () => {
                   </div>
                 </div>
               ) : (
-                <div style={{ textAlign: 'center', color: 'var(--erp-text-muted)', padding: '48px 0' }}>
-                  Select a purchase order to display items and trigger direct document prints.
+                <div style={{ textAlign: 'center', color: 'var(--erp-outline)', padding: '48px 0' }}>
+                  Select a purchase order record to inspect and verify details.
                 </div>
               )}
             </div>
           </section>
 
         </div>
-      </div>
 
       {/* GENERATE PO MODAL */}
       {generateModalOpen && (
-        <>
-          <div 
-            style={{ 
-              position: 'fixed', 
-              top: 0, 
-              left: 0, 
-              right: 0, 
-              bottom: 0, 
-              background: 'rgba(0,0,0,0.4)', 
-              zIndex: 999 
-            }} 
-            onClick={() => setGenerateModalOpen(false)}
-          />
-          <div 
-            style={{ 
-              position: 'fixed', 
-              top: '50%', 
-              left: '50%', 
-              transform: 'translate(-50%, -50%)', 
-              width: 'min(550px, 95vw)', 
-              background: '#fff', 
-              borderRadius: '8px', 
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)', 
-              zIndex: 1000, 
-              padding: '24px' 
-            }}
-          >
-            <h3 style={{ marginTop: 0 }}>Generate New Purchase Order</h3>
-            <p style={{ color: 'var(--erp-text-muted)', fontSize: '0.88rem', marginBottom: '16px' }}>
-              Select an approved sourcing RFQ/Quotation context. The sequence number will auto-generate.
-            </p>
+        <div className="erp-modal-overlay">
+          <div className="erp-modal" style={{ width: 'min(520px, 95vw)' }}>
+            <div className="erp-modal__header">
+              <h3 className="erp-card__title">Generate New Purchase Order</h3>
+              <button style={{ border: 0, background: 'transparent', cursor: 'pointer' }} onClick={() => setGenerateModalOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
             
             <form onSubmit={handleGeneratePoSubmit}>
-              
-              <div className="erp-form-group">
-                <label className="erp-label">RFQ Linkage Reference</label>
-                <select 
-                  className="erp-input"
-                  value={selectedRfqId}
-                  onChange={e => handleRfqChange(e.target.value)}
-                  required
-                >
-                  <option value="">-- Choose RFQ --</option>
-                  {availableRfqs.map(rfq => (
-                    <option key={rfq.id} value={rfq.id}>
-                      {rfq.rfq_number} - {rfq.title} ({rfq.status})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="erp-form-group">
-                <label className="erp-label">Accepted Vendor Quotation Linkage</label>
-                <select 
-                  className="erp-input"
-                  value={selectedQuotationId}
-                  onChange={e => handleQuotationChange(e.target.value)}
-                  disabled={!selectedRfqId}
-                  required
-                >
-                  <option value="">-- Choose Quotation --</option>
-                  {availableQuotations
-                    .filter(q => q.rfq_id === selectedRfqId)
-                    .map(q => (
-                      <option key={q.id} value={q.id}>
-                        Bid by {q.vendors?.company_name} - ${parseFloat(q.total_amount).toFixed(2)} ({q.status})
+              <div className="erp-modal__body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="erp-form-group">
+                  <label className="erp-label">RFQ Reference</label>
+                  <select 
+                    className="erp-select"
+                    value={selectedRfqId}
+                    onChange={e => handleRfqChange(e.target.value)}
+                    required
+                  >
+                    <option value="">-- Select RFQ --</option>
+                    {availableRfqs.map(rfq => (
+                      <option key={rfq.id} value={rfq.id}>
+                        {rfq.rfq_number} - {rfq.title} ({rfq.status})
                       </option>
-                    ))
-                  }
-                </select>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="erp-form-group">
+                  <label className="erp-label">Accepted Supplier Quotation</label>
+                  <select 
+                    className="erp-select"
+                    value={selectedQuotationId}
+                    onChange={e => handleQuotationChange(e.target.value)}
+                    disabled={!selectedRfqId}
+                    required
+                  >
+                    <option value="">-- Choose Quotation --</option>
+                    {availableQuotations
+                      .filter(q => q.rfq_id === selectedRfqId)
+                      .map(q => (
+                        <option key={q.id} value={q.id}>
+                          Bid by {q.vendors?.company_name} - ${parseFloat(q.total_amount).toFixed(2)} ({q.status})
+                        </option>
+                      ))
+                    }
+                  </select>
+                </div>
+
+                <div className="erp-form-group">
+                  <label className="erp-label">Total Amount ($)</label>
+                  <input 
+                    type="number" 
+                    className="erp-input" 
+                    value={totalAmount}
+                    onChange={e => setTotalAmount(e.target.value)}
+                    step="0.01"
+                    required
+                  />
+                </div>
               </div>
 
-              <div className="erp-form-group">
-                <label className="erp-label">Calculated Total Price ($)</label>
-                <input 
-                  type="number" 
-                  className="erp-input" 
-                  value={totalAmount}
-                  onChange={e => setTotalAmount(e.target.value)}
-                  step="0.01"
-                  required
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '20px' }}>
+              <div className="erp-modal__footer">
                 <button 
                   type="button" 
-                  className="erp-btn erp-btn--secondary"
+                  className="erp-btn erp-btn--outline"
                   onClick={() => setGenerateModalOpen(false)}
                   disabled={submittingPo}
                 >
@@ -514,7 +488,7 @@ const PurchaseOrdersPage = () => {
               </div>
             </form>
           </div>
-        </>
+        </div>
       )}
 
     </EnterpriseErpLayout>

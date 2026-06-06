@@ -3,6 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { EnterpriseErpLayout } from '../components/erp';
 import { useAuth } from '../context/AuthContext';
 import { erpApi } from '../api/erpApi';
+import { 
+  AlertCircle, 
+  Check, 
+  X, 
+  Clock, 
+  UserCheck, 
+  History,
+  ChevronRight
+} from 'lucide-react';
 
 const ApprovalWorkflowPage = () => {
   const { user, logout } = useAuth();
@@ -23,6 +32,11 @@ const ApprovalWorkflowPage = () => {
   const [decisionType, setDecisionType] = useState('approved'); // approved or rejected
   const [remarks, setRemarks] = useState('');
   const [submittingDecision, setSubmittingDecision] = useState(false);
+
+  const breadcrumbs = useMemo(() => ([
+    { label: 'Home', href: '/' },
+    { label: 'Approval Workflows' }
+  ]), []);
 
   useEffect(() => {
     loadApprovals();
@@ -76,19 +90,13 @@ const ApprovalWorkflowPage = () => {
   };
 
   const handleNavigate = (item) => {
-    if (item.id === 'dashboard') {
-      navigate('/dashboard');
-    } else {
-      navigate(`/${item.id}`);
-    }
+    navigate(item.id === 'dashboard' ? '/dashboard' : `/${item.id}`);
   };
 
-  // Helper to render Timeline
   const renderTimeline = (timelineSteps) => {
     if (!timelineSteps) return null;
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative', paddingLeft: '24px', margin: '20px 0' }}>
-        {/* Vertical Line */}
         <div 
           style={{ 
             position: 'absolute', 
@@ -96,12 +104,11 @@ const ApprovalWorkflowPage = () => {
             top: '8px', 
             bottom: '8px', 
             width: '2px', 
-            background: 'var(--erp-border)' 
+            background: 'var(--erp-outline-variant)' 
           }} 
         />
         {timelineSteps.map((step, idx) => (
           <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', position: 'relative' }}>
-            {/* Step Dot */}
             <div 
               style={{ 
                 position: 'absolute', 
@@ -110,8 +117,8 @@ const ApprovalWorkflowPage = () => {
                 width: '14px', 
                 height: '14px', 
                 borderRadius: '50%', 
-                background: step.completed ? '#10b981' : 'var(--erp-border)',
-                border: step.completed ? 'none' : '2px solid #cbd5e1',
+                background: step.completed ? 'var(--erp-success)' : 'var(--erp-surface-container-highest)',
+                border: step.completed ? 'none' : '2px solid var(--erp-outline-variant)',
                 zIndex: 2,
                 display: 'flex',
                 alignItems: 'center',
@@ -121,13 +128,12 @@ const ApprovalWorkflowPage = () => {
               {step.completed && <span style={{ color: '#fff', fontSize: '8px' }}>✓</span>}
             </div>
 
-            {/* Content */}
             <div>
-              <div style={{ fontWeight: 600, color: step.completed ? 'var(--erp-text)' : 'var(--erp-text-muted)' }}>
+              <div style={{ fontWeight: 600, color: step.completed ? 'var(--erp-on-surface)' : 'var(--erp-outline)' }}>
                 {step.state}
               </div>
               {step.completed && step.date && (
-                <div style={{ fontSize: '0.75rem', color: 'var(--erp-text-muted)', marginTop: '2px' }}>
+                <div style={{ fontSize: '0.72rem', color: 'var(--erp-outline)', marginTop: '2px' }}>
                   Completed: {new Date(step.date).toLocaleString()}
                 </div>
               )}
@@ -156,240 +162,242 @@ const ApprovalWorkflowPage = () => {
       }}
       onProfile={() => navigate('/dashboard')}
       onSettings={() => navigate('/settings')}
+      breadcrumbs={breadcrumbs}
     >
-      <div className="erp-breadcrumbs">
-        <span className="erp-breadcrumbs__item">ERP Portal</span>
-        <span className="erp-breadcrumbs__separator">/</span>
-        <span className="erp-breadcrumbs__current">Approval Workflows</span>
-      </div>
+      <h1 className="erp-title">Approval Workflows</h1>
+      <p className="erp-subtitle">Review, authorize and trace step approvals for procurement tenders.</p>
 
-      <div className="erp-content">
-        {error && <div className="erp-alert erp-alert--danger">{error}</div>}
-        {success && <div className="erp-alert erp-alert--success">{success}</div>}
+      {error && <div className="erp-alert erp-alert--danger"><AlertCircle size={15} /> {error}</div>}
+      {success && <div className="erp-alert erp-alert--success"><Check size={15} /> {success}</div>}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', alignItems: 'start' }}>
+      <div className="erp-grid-2" style={{ alignItems: 'start' }}>
+        
+        {/* LEFT PANEL: ACTIVE APPROVALS & HISTORY */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
-          {/* LEFT PANEL: ACTIVE APPROVALS & HISTORY */}
-          <div style={{ display: 'grid', gap: '16px' }}>
-            
-            {/* PENDING APPROVALS */}
-            <section className="erp-card">
-              <div className="erp-card__header">
-                <h2 className="erp-card__title">Pending Sourcing Approvals</h2>
-                <p className="erp-card__subtitle">Bids and campaigns awaiting Manager authorization.</p>
-              </div>
-              <div className="erp-card__body">
-                {loading ? (
-                  <p style={{ textAlign: 'center', color: 'var(--erp-text-muted)' }}>Loading approvals...</p>
-                ) : activePendings.length === 0 ? (
-                  <div style={{ padding: '24px', textAlign: 'center', color: 'var(--erp-text-muted)' }}>
-                    No pending approvals awaiting review.
-                  </div>
-                ) : (
-                  <div style={{ display: 'grid', gap: '12px' }}>
-                    {activePendings.map(app => (
-                      <article 
-                        key={app.id} 
-                        className="erp-card" 
-                        style={{ 
-                          padding: '16px', 
-                          margin: 0, 
-                          border: '1px solid var(--erp-border)',
-                          cursor: 'pointer',
-                          background: selectedApp?.id === app.id ? '#f8fafc' : '#fff'
-                        }}
-                        onClick={() => setSelectedApp(app)}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                          <div>
-                            <h4 style={{ margin: 0, fontSize: '0.98rem' }}>{app.rfqs?.title || 'RFQ Bid Review'}</h4>
-                            <p style={{ margin: '4px 0', fontSize: '0.88rem', color: 'var(--erp-text-muted)' }}>
-                              RFQ: {app.rfqs?.rfq_number || 'N/A'} | Vendor: {app.quotations?.vendors?.company_name || 'N/A'}
-                            </p>
-                            <span style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--erp-primary)' }}>
-                              Total amount: ${parseFloat(app.quotations?.total_amount || 0).toFixed(2)}
-                            </span>
-                          </div>
-                          
-                          {/* Role check for Manager action */}
-                          {(user?.role === 'manager' || user?.role === 'admin') ? (
-                            <div style={{ display: 'flex', gap: '8px' }} onClick={e => e.stopPropagation()}>
-                              <button 
-                                className="erp-btn erp-btn--success" 
-                                style={{ padding: '4px 12px', fontSize: '0.8rem' }}
-                                onClick={() => openDecisionModal(app, 'approved')}
-                              >
-                                Approve
-                              </button>
-                              <button 
-                                className="erp-btn erp-btn--danger" 
-                                style={{ padding: '4px 12px', fontSize: '0.8rem' }}
-                                onClick={() => openDecisionModal(app, 'rejected')}
-                              >
-                                Reject
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="erp-badge erp-badge--warning">Pending Manager Decision</span>
-                          )}
+          {/* PENDING APPROVALS */}
+          <section className="erp-card">
+            <div className="erp-card__header">
+              <h2 className="erp-card__title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <UserCheck size={18} /> Pending Authorization
+              </h2>
+            </div>
+            <div className="erp-card__body">
+              {loading ? (
+                <p style={{ textAlign: 'center', color: 'var(--erp-outline)', padding: '20px' }}>Loading approvals...</p>
+              ) : activePendings.length === 0 ? (
+                <div style={{ padding: '24px', textAlign: 'center', color: 'var(--erp-outline)' }}>
+                  No pending approval requests.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {activePendings.map(app => (
+                    <article 
+                      key={app.id} 
+                      className="erp-card" 
+                      style={{ 
+                        padding: '16px', 
+                        margin: 0, 
+                        border: '1px solid var(--erp-outline-variant)',
+                        cursor: 'pointer',
+                        background: selectedApp?.id === app.id ? 'var(--erp-surface-container)' : 'var(--erp-surface)'
+                      }}
+                      onClick={() => setSelectedApp(app)}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                        <div>
+                          <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600 }}>{app.rfqs?.title || 'RFQ Bid Review'}</h4>
+                          <p style={{ margin: '4px 0', fontSize: '0.82rem', color: 'var(--erp-outline)' }}>
+                            RFQ: {app.rfqs?.rfq_number || 'N/A'} | Supplier: {app.quotations?.vendors?.company_name || 'N/A'}
+                          </p>
+                          <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--erp-primary)' }}>
+                            Amount: ${parseFloat(app.quotations?.total_amount || 0).toFixed(2)}
+                          </span>
                         </div>
-                      </article>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </section>
-
-            {/* DECISION HISTORY */}
-            <section className="erp-card">
-              <div className="erp-card__header">
-                <h2 className="erp-card__title">Completed Decisions History</h2>
-                <p className="erp-card__subtitle">Logs of previously processed procurement workflows.</p>
-              </div>
-              <div className="erp-card__body">
-                {activeDecideds.length === 0 ? (
-                  <p style={{ color: 'var(--erp-text-muted)' }}>No completed decisions in log.</p>
-                ) : (
-                  <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                      <thead>
-                        <tr style={{ textAlign: 'left', color: 'var(--erp-text-muted)', borderBottom: '1px solid var(--erp-border)' }}>
-                          <th style={{ padding: '10px' }}>RFQ</th>
-                          <th style={{ padding: '10px' }}>Vendor</th>
-                          <th style={{ padding: '10px' }}>Amount</th>
-                          <th style={{ padding: '10px' }}>Final Status</th>
-                          <th style={{ padding: '10px' }}>Decided At</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {activeDecideds.map(app => (
-                          <tr 
-                            key={app.id} 
-                            style={{ 
-                              borderBottom: '1px solid var(--erp-border)', 
-                              cursor: 'pointer',
-                              background: selectedApp?.id === app.id ? '#f8fafc' : 'transparent' 
-                            }}
-                            onClick={() => setSelectedApp(app)}
-                          >
-                            <td style={{ padding: '10px' }}>{app.rfqs?.rfq_number}</td>
-                            <td style={{ padding: '10px' }}>{app.quotations?.vendors?.company_name}</td>
-                            <td style={{ padding: '10px' }}>${parseFloat(app.quotations?.total_amount || 0).toFixed(2)}</td>
-                            <td style={{ padding: '10px' }}>
-                              <span className={`erp-badge erp-badge--${app.status === 'approved' ? 'success' : 'danger'}`}>
-                                {app.status}
-                              </span>
-                            </td>
-                            <td style={{ padding: '10px' }}>
-                              {app.decided_at ? new Date(app.decided_at).toLocaleDateString() : '-'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </section>
-          </div>
-
-          {/* RIGHT PANEL: SELECTED WORKFLOW TIMELINE DETAILS */}
-          <div style={{ position: 'sticky', top: '16px' }}>
-            <section className="erp-card">
-              <div className="erp-card__header">
-                <h2 className="erp-card__title">Workflow Timeline Tracking</h2>
-                <p className="erp-card__subtitle">Detailed lifecycle tracking of the selected procurement item.</p>
-              </div>
-              <div className="erp-card__body">
-                {selectedApp ? (
-                  <div>
-                    <h3 style={{ margin: '0 0 4px 0', fontSize: '1.05rem' }}>{selectedApp.rfqs?.title}</h3>
-                    <p style={{ color: 'var(--erp-text-muted)', fontSize: '0.85rem', margin: 0 }}>
-                      RFQ ID: {selectedApp.rfqs?.rfq_number}
-                    </p>
-
-                    <div style={{ borderTop: '1px solid var(--erp-border)', margin: '14px 0', paddingTop: '14px' }}>
-                      <div style={{ display: 'grid', gap: '8px', fontSize: '0.88rem' }}>
-                        <div><strong>Supplier:</strong> {selectedApp.quotations?.vendors?.company_name}</div>
-                        <div><strong>Quotation Cost:</strong> ${parseFloat(selectedApp.quotations?.total_amount || 0).toFixed(2)}</div>
-                        <div><strong>Current Approval Status:</strong> <span style={{ textTransform: 'uppercase', fontWeight: 600 }}>{selectedApp.status}</span></div>
-                        {selectedApp.comments && (
-                          <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '6px', borderLeft: '3px solid var(--erp-primary)', marginTop: '8px' }}>
-                            <strong>Manager Remarks:</strong> "{selectedApp.comments}"
+                        
+                        {(user?.role === 'manager' || user?.role === 'admin') ? (
+                          <div style={{ display: 'flex', gap: '8px' }} onClick={e => e.stopPropagation()}>
+                            <button 
+                              className="erp-btn erp-btn--primary" 
+                              style={{ padding: '4px 10px', fontSize: '0.75rem', height: '28px' }}
+                              onClick={() => openDecisionModal(app, 'approved')}
+                            >
+                              Approve
+                            </button>
+                            <button 
+                              className="erp-btn erp-btn--danger" 
+                              style={{ padding: '4px 10px', fontSize: '0.75rem', height: '28px' }}
+                              onClick={() => openDecisionModal(app, 'rejected')}
+                            >
+                              Reject
+                            </button>
                           </div>
+                        ) : (
+                          <span className="erp-badge erp-badge--warning">Pending Manager Sign-off</span>
                         )}
                       </div>
-                    </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
 
-                    <h4 style={{ margin: '18px 0 8px 0', fontSize: '0.92rem', textTransform: 'uppercase', color: 'var(--erp-text-muted)' }}>
-                      Lifecycle Tracking
-                    </h4>
-                    {renderTimeline(selectedApp.timeline)}
+          {/* DECISION HISTORY */}
+          <section className="erp-card">
+            <div className="erp-card__header">
+              <h2 className="erp-card__title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <History size={18} /> Approval logs history
+              </h2>
+            </div>
+            <div className="erp-card__body">
+              {activeDecideds.length === 0 ? (
+                <p style={{ color: 'var(--erp-outline)', textAlign: 'center' }}>No historical workflow actions found.</p>
+              ) : (
+                <div className="erp-table-wrapper" style={{ border: 0, borderRadius: 0 }}>
+                  <table className="erp-table">
+                    <thead>
+                      <tr>
+                        <th>Target File</th>
+                        <th>Auditor</th>
+                        <th>Verification Status</th>
+                        <th>Auditor Comments</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activeDecideds.map(app => (
+                        <tr key={app.id}>
+                          <td>
+                            <strong>{app.rfqs?.title}</strong>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--erp-outline)' }}>
+                              Supplier: {app.quotations?.vendors?.company_name}
+                            </div>
+                          </td>
+                          <td>{app.users?.name || 'Manager'}</td>
+                          <td>
+                            <span className={`erp-badge erp-badge--${app.status === 'approved' ? 'success' : 'danger'}`}>
+                              {app.status.toUpperCase()}
+                            </span>
+                          </td>
+                          <td>{app.comments || 'No remarks provided'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+
+        {/* RIGHT PANEL: SELECTED ITEM WORKFLOW INSPECTOR */}
+        <div>
+          {selectedApp ? (
+            <section className="erp-card" style={{ position: 'sticky', top: '90px' }}>
+              <div className="erp-card__header">
+                <h3 className="erp-card__title">Workflow Inspector</h3>
+                <span className={`erp-badge erp-badge--${selectedApp.status === 'approved' ? 'success' : selectedApp.status === 'rejected' ? 'danger' : 'warning'}`}>
+                  {selectedApp.status.toUpperCase()}
+                </span>
+              </div>
+              <div className="erp-card__body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--erp-outline)', textTransform: 'uppercase', fontWeight: 600 }}>Tender / Proposal Title</div>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--erp-on-surface)' }}>{selectedApp.rfqs?.title}</div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--erp-outline)', fontWeight: 600 }}>RFQ ID</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 500 }}>{selectedApp.rfqs?.rfq_number || 'N/A'}</div>
                   </div>
-                ) : (
-                  <div style={{ textAlign: 'center', color: 'var(--erp-text-muted)', padding: '40px 0' }}>
-                    Select an approval or history item to inspect its complete workflow timeline.
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--erp-outline)', fontWeight: 600 }}>Supplier</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 500 }}>{selectedApp.quotations?.vendors?.company_name || 'N/A'}</div>
+                  </div>
+                </div>
+
+                <div style={{ background: 'var(--erp-surface-container-low)', padding: '14px', borderRadius: '8px', border: '1px dashed var(--erp-outline-variant)' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--erp-outline)', fontWeight: 600 }}>Total Quoted Value</div>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--erp-primary)', marginTop: '4px' }}>
+                    ${parseFloat(selectedApp.quotations?.total_amount || 0).toFixed(2)}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--erp-outline)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Clock size={12} /> Steps Verification Trailing
+                  </div>
+                  {renderTimeline(selectedApp.timeline)}
+                </div>
+
+                {(selectedApp.status === 'pending' && (user?.role === 'manager' || user?.role === 'admin')) && (
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                    <button 
+                      className="erp-btn erp-btn--primary" 
+                      style={{ flex: 1, justifyContent: 'center' }}
+                      onClick={() => openDecisionModal(selectedApp, 'approved')}
+                    >
+                      Sign off Approval
+                    </button>
+                    <button 
+                      className="erp-btn erp-btn--danger" 
+                      style={{ flex: 1, justifyContent: 'center' }}
+                      onClick={() => openDecisionModal(selectedApp, 'rejected')}
+                    >
+                      Reject Tender
+                    </button>
                   </div>
                 )}
               </div>
             </section>
-          </div>
-
+          ) : (
+            <div style={{ 
+              border: '2px dashed var(--erp-outline-variant)', 
+              borderRadius: 'var(--erp-radius-lg)', 
+              padding: '40px', 
+              textAlign: 'center', 
+              color: 'var(--erp-outline)' 
+            }}>
+              Select any pending request from the registry panel to inspect its workflow history details.
+            </div>
+          )}
         </div>
+
       </div>
 
-      {/* DECISION POPUP MODAL */}
+      {/* Decision Modal */}
       {decisionModalOpen && (
-        <>
-          <div 
-            style={{ 
-              position: 'fixed', 
-              top: 0, 
-              left: 0, 
-              right: 0, 
-              bottom: 0, 
-              background: 'rgba(0,0,0,0.4)', 
-              zIndex: 999 
-            }} 
-            onClick={() => setDecisionModalOpen(false)}
-          />
-          <div 
-            style={{ 
-              position: 'fixed', 
-              top: '50%', 
-              left: '50%', 
-              transform: 'translate(-50%, -50%)', 
-              width: 'min(500px, 90vw)', 
-              background: '#fff', 
-              borderRadius: '8px', 
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)', 
-              zIndex: 1000, 
-              padding: '24px' 
-            }}
-          >
-            <h3 style={{ marginTop: 0, textTransform: 'capitalize' }}>
-              Confirm {decisionType} Sourcing Bid
-            </h3>
-            <p style={{ color: 'var(--erp-text-muted)', fontSize: '0.9rem' }}>
-              Please enter your workflow comments or authorization remarks below to finalize this decision.
-            </p>
+        <div className="erp-modal-overlay">
+          <div className="erp-modal" style={{ width: '450px' }}>
+            <div className="erp-modal__header">
+              <h3 className="erp-card__title">Workflow Validation sign</h3>
+              <button style={{ border: 0, background: 'transparent', cursor: 'pointer' }} onClick={() => setDecisionModalOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            
             <form onSubmit={handleDecisionSubmit}>
-              <div className="erp-form-group">
-                <label className="erp-label">Authorization Remarks</label>
-                <textarea 
-                  className="erp-input"
-                  style={{ minHeight: '96px', paddingTop: '10px' }}
-                  placeholder="Provide brief explanation for approval/rejection remarks..."
-                  value={remarks}
-                  onChange={e => setRemarks(e.target.value)}
-                  required
-                />
+              <div className="erp-modal__body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <p style={{ color: 'var(--erp-outline)', fontSize: '0.85rem', margin: 0 }}>
+                  Provide sign-off remarks or reasons to authorize this action.
+                </p>
+                <div className="erp-form-group">
+                  <label className="erp-label">Authorization Remarks</label>
+                  <textarea 
+                    className="erp-textarea"
+                    placeholder="Workflow log comments..."
+                    value={remarks}
+                    onChange={e => setRemarks(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
+              <div className="erp-modal__footer">
                 <button 
                   type="button" 
-                  className="erp-btn erp-btn--secondary"
+                  className="erp-btn erp-btn--outline"
                   onClick={() => setDecisionModalOpen(false)}
                   disabled={submittingDecision}
                 >
@@ -397,15 +405,15 @@ const ApprovalWorkflowPage = () => {
                 </button>
                 <button 
                   type="submit" 
-                  className={`erp-btn erp-btn--${decisionType === 'approved' ? 'success' : 'danger'}`}
+                  className={`erp-btn erp-btn--${decisionType === 'approved' ? 'primary' : 'danger'}`}
                   disabled={submittingDecision}
                 >
-                  {submittingDecision ? 'Submitting...' : `Submit ${decisionType}`}
+                  {submittingDecision ? 'Submitting...' : `Confirm ${decisionType}`}
                 </button>
               </div>
             </form>
           </div>
-        </>
+        </div>
       )}
 
     </EnterpriseErpLayout>

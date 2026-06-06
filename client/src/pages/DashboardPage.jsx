@@ -338,16 +338,7 @@ const DashboardPage = () => {
         onProfile={() => navigate('/dashboard')}
         onSettings={() => navigate('/settings')}
       >
-        <div style={css.page}>
-          <div style={{ padding: '0 24px' }}>
-            {/* Breadcrumb */}
-            <div style={css.breadcrumb}>
-              <span>ERP Portal</span>
-              <span style={css.breadSep}>/</span>
-              <span style={css.breadCurrent}>Overview</span>
-            </div>
-
-            {/* Hero */}
+        {/* Hero */}
             <div style={css.hero}>
               <div style={css.heroBg} />
               <div style={{ position: 'relative', zIndex: 1 }}>
@@ -515,8 +506,6 @@ const DashboardPage = () => {
                 </div>
               </>
             )}
-          </div>
-        </div>
       </EnterpriseErpLayout>
     </>
   );

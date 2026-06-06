@@ -1,8 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { EnterpriseErpLayout } from '../components/erp';
 import { useAuth } from '../context/AuthContext';
 import { erpApi } from '../api/erpApi';
+import { 
+  Plus, 
+  Search, 
+  Check, 
+  X, 
+  Building, 
+  Phone, 
+  Mail, 
+  MapPin, 
+  AlertCircle 
+} from 'lucide-react';
 
 const VendorsPage = () => {
   const { user, logout } = useAuth();
@@ -15,7 +26,6 @@ const VendorsPage = () => {
   const [success, setSuccess] = useState('');
   const [search, setSearch] = useState('');
 
-  // Modals state
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newVendor, setNewVendor] = useState({
     company_name: '',
@@ -28,7 +38,6 @@ const VendorsPage = () => {
     user_id: ''
   });
 
-  // Current Vendor detail view
   const [selectedVendor, setSelectedVendor] = useState(null);
 
   const isAdminOrProcurement = user?.role === 'admin' || user?.role === 'procurement_officer';
@@ -42,22 +51,18 @@ const VendorsPage = () => {
     setError('');
     try {
       if (isAdminOrProcurement) {
-        // Fetch all vendors
         const res = await erpApi.vendors.list();
         setVendors(res.data || []);
         
-        // Fetch user accounts to link them
         const usersRes = await erpApi.users.list();
         const availableVendorUsers = (usersRes.data || []).filter(u => u.role === 'vendor');
         setVendorUsers(availableVendorUsers);
       } else if (user?.role === 'vendor') {
-        // If they are a vendor, fetch their own vendor record linked to user.id
         const res = await erpApi.vendors.list();
         const myProfile = (res.data || []).find(v => v.user_id === user.id);
         if (myProfile) {
           setSelectedVendor(myProfile);
         } else {
-          // Initialize fresh profile linked to this user
           setNewVendor(prev => ({ ...prev, email: user.email, company_name: user.name, user_id: user.id }));
         }
       }
@@ -73,7 +78,6 @@ const VendorsPage = () => {
     setError('');
     setSuccess('');
     try {
-      // Auto-generate code if empty
       const payload = {
         ...newVendor,
         vendor_code: 'VND-' + Math.floor(1000 + Math.random() * 9000),
@@ -119,7 +123,6 @@ const VendorsPage = () => {
         await erpApi.vendors.update(selectedVendor.id, selectedVendor);
         setSuccess('Profile updated successfully');
       } else {
-        // Create profile for first time
         const payload = {
           ...newVendor,
           vendor_code: 'VND-' + Math.floor(1000 + Math.random() * 9000),
@@ -142,12 +145,13 @@ const VendorsPage = () => {
   );
 
   const handleNavigate = (item) => {
-    if (item.id === 'dashboard') {
-      navigate('/dashboard');
-    } else {
-      navigate(`/${item.id}`);
-    }
+    navigate(item.id === 'dashboard' ? '/dashboard' : `/${item.id}`);
   };
+
+  const breadcrumbs = useMemo(() => ([
+    { label: 'Home', href: '/' },
+    { label: 'Vendors' }
+  ]), []);
 
   return (
     <EnterpriseErpLayout
@@ -159,16 +163,10 @@ const VendorsPage = () => {
       }}
       onProfile={() => navigate('/dashboard')}
       onSettings={() => navigate('/settings')}
+      breadcrumbs={breadcrumbs}
     >
-      <div className="erp-breadcrumbs">
-        <span className="erp-breadcrumbs__item">ERP Dashboard</span>
-        <span className="erp-breadcrumbs__separator">/</span>
-        <span className="erp-breadcrumbs__current">Vendors</span>
-      </div>
-
-      <div className="erp-content">
-        {error && <div className="erp-alert erp-alert--danger">{error}</div>}
-        {success && <div className="erp-alert erp-alert--success">{success}</div>}
+        {error && <div className="erp-alert erp-alert--danger"><AlertCircle size={15} /> {error}</div>}
+        {success && <div className="erp-alert erp-alert--success"><Check size={15} /> {success}</div>}
 
         {/* ADMIN OR PROCUREMENT VIEW */}
         {isAdminOrProcurement && (
@@ -176,32 +174,32 @@ const VendorsPage = () => {
             <div className="erp-card__header">
               <div>
                 <h1 className="erp-card__title">Vendor Directory</h1>
-                <p className="erp-card__subtitle">Onboard, manage, and verify enterprise suppliers.</p>
+                <p className="erp-card__subtitle">Manage supplier accounts and approval statuses.</p>
               </div>
               <button className="erp-btn erp-btn--primary" onClick={() => setShowCreateModal(true)}>
-                + Onboard Vendor
+                <Plus size={16} /> Onboard Supplier
               </button>
             </div>
 
-            <div className="erp-card__body">
-              <div style={{ marginBottom: '16px' }}>
+            <div className="erp-card__body" style={{ display: 'grid', gap: '16px' }}>
+              <div className="erp-search" style={{ maxWidth: '360px' }}>
+                <span className="erp-search__icon"><Search size={15} /></span>
                 <input
                   type="text"
-                  placeholder="Search by name, code or category..."
-                  className="erp-input"
-                  style={{ maxWidth: '400px' }}
+                  placeholder="Search suppliers..."
+                  className="erp-search__input"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
 
               {loading ? (
-                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--erp-text-muted)' }}>
-                  Loading vendors...
+                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--erp-outline)' }}>
+                  Loading supplier directory...
                 </div>
               ) : filteredVendors.length === 0 ? (
-                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--erp-text-muted)' }}>
-                  No vendors found.
+                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--erp-outline)' }}>
+                  No suppliers registered yet.
                 </div>
               ) : (
                 <div className="erp-table-wrapper">
@@ -212,7 +210,7 @@ const VendorsPage = () => {
                         <th>Company Name</th>
                         <th>Category</th>
                         <th>Contact Person</th>
-                        <th>Email / Phone</th>
+                        <th>Contact info</th>
                         <th>Status</th>
                         <th>Actions</th>
                       </tr>
@@ -225,8 +223,10 @@ const VendorsPage = () => {
                           <td><span className="erp-badge erp-badge--info">{vendor.category}</span></td>
                           <td>{vendor.contact_person || 'N/A'}</td>
                           <td>
-                            <div style={{ fontSize: '0.85rem' }}>{vendor.email}</div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--erp-text-muted)' }}>{vendor.phone || 'N/A'}</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '0.82rem' }}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Mail size={12} /> {vendor.email}</span>
+                              {vendor.phone && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--erp-outline)' }}><Phone size={12} /> {vendor.phone}</span>}
+                            </div>
                           </td>
                           <td>
                             <span className={`erp-badge erp-badge--${
@@ -241,16 +241,16 @@ const VendorsPage = () => {
                               {vendor.status !== 'active' && (
                                 <button 
                                   className="erp-btn erp-btn--secondary" 
-                                  style={{ height: '32px', padding: '0 10px', fontSize: '0.8rem' }}
+                                  style={{ height: '32px', padding: '0 10px', fontSize: '0.78rem' }}
                                   onClick={() => handleUpdateStatus(vendor.id, 'active')}
                                 >
-                                  Verify
+                                  Approve
                                 </button>
                               )}
                               {vendor.status !== 'suspended' && (
                                 <button 
                                   className="erp-btn erp-btn--danger" 
-                                  style={{ height: '32px', padding: '0 10px', fontSize: '0.8rem' }}
+                                  style={{ height: '32px', padding: '0 10px', fontSize: '0.78rem' }}
                                   onClick={() => handleUpdateStatus(vendor.id, 'suspended')}
                                 >
                                   Suspend
@@ -274,24 +274,24 @@ const VendorsPage = () => {
             <div className="erp-card__header">
               <div>
                 <h1 className="erp-card__title">Vendor Profile</h1>
-                <p className="erp-card__subtitle">Maintain your corporate credentials and contact details.</p>
+                <p className="erp-card__subtitle">Update your business details and credentials.</p>
               </div>
               <div>
                 {selectedVendor ? (
                   <span className={`erp-badge erp-badge--${
                     selectedVendor.status === 'active' ? 'success' : 'warning'
                   }`}>
-                    Account Status: {selectedVendor.status}
+                    Status: {selectedVendor.status}
                   </span>
                 ) : (
-                  <span className="erp-badge erp-badge--danger">No active profile linked</span>
+                  <span className="erp-badge erp-badge--danger">No profile registered</span>
                 )}
               </div>
             </div>
 
             <div className="erp-card__body">
               {loading ? (
-                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--erp-text-muted)' }}>
+                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--erp-outline)' }}>
                   Loading profile...
                 </div>
               ) : selectedVendor ? (
@@ -308,7 +308,7 @@ const VendorsPage = () => {
                       />
                     </div>
                     <div className="erp-form-group">
-                      <label className="erp-label">Vendor Code (System Generated)</label>
+                      <label className="erp-label">Vendor Code</label>
                       <input type="text" className="erp-input" value={selectedVendor.vendor_code} disabled />
                     </div>
                   </div>
@@ -319,18 +319,16 @@ const VendorsPage = () => {
                       <input 
                         type="text" 
                         className="erp-input"
-                        placeholder="e.g. IT, Operations, Raw Materials"
                         value={selectedVendor.category} 
                         onChange={(e) => setSelectedVendor({ ...selectedVendor, category: e.target.value })}
                         required
                       />
                     </div>
                     <div className="erp-form-group">
-                      <label className="erp-label">GST / Tax Number</label>
+                      <label className="erp-label">GST / Tax ID</label>
                       <input 
                         type="text" 
                         className="erp-input"
-                        placeholder="GSTINXXXXXX"
                         value={selectedVendor.gst_number || ''} 
                         onChange={(e) => setSelectedVendor({ ...selectedVendor, gst_number: e.target.value })}
                       />
@@ -339,7 +337,7 @@ const VendorsPage = () => {
 
                   <div className="erp-grid-3">
                     <div className="erp-form-group">
-                      <label className="erp-label">Contact Person</label>
+                      <label className="erp-label">Contact Representative</label>
                       <input 
                         type="text" 
                         className="erp-input"
@@ -348,7 +346,7 @@ const VendorsPage = () => {
                       />
                     </div>
                     <div className="erp-form-group">
-                      <label className="erp-label">Email</label>
+                      <label className="erp-label">Business Email</label>
                       <input 
                         type="email" 
                         className="erp-input"
@@ -358,7 +356,7 @@ const VendorsPage = () => {
                       />
                     </div>
                     <div className="erp-form-group">
-                      <label className="erp-label">Phone</label>
+                      <label className="erp-label">Phone Number</label>
                       <input 
                         type="text" 
                         className="erp-input"
@@ -369,7 +367,7 @@ const VendorsPage = () => {
                   </div>
 
                   <div className="erp-form-group">
-                    <label className="erp-label">Office Address</label>
+                    <label className="erp-label">Registered Office Address</label>
                     <textarea 
                       className="erp-textarea"
                       value={selectedVendor.address || ''} 
@@ -383,8 +381,8 @@ const VendorsPage = () => {
                 </form>
               ) : (
                 <div>
-                  <p style={{ color: 'var(--erp-text-muted)', marginBottom: '16px' }}>
-                    You have not set up your supplier profile yet. Complete the form below to initiate verification.
+                  <p style={{ color: 'var(--erp-outline)', marginBottom: '16px' }}>
+                    Register your business to begin verified operations.
                   </p>
                   <form className="erp-form" onSubmit={handleUpdateSelfProfile}>
                     <div className="erp-grid-2">
@@ -403,7 +401,7 @@ const VendorsPage = () => {
                         <input 
                           type="text" 
                           className="erp-input"
-                          placeholder="e.g. Logistics, Hardware, Catering"
+                          placeholder="e.g. IT, Logistics"
                           value={newVendor.category} 
                           onChange={(e) => setNewVendor({ ...newVendor, category: e.target.value })}
                           required
@@ -426,7 +424,7 @@ const VendorsPage = () => {
                         />
                       </div>
                       <div className="erp-form-group">
-                        <label className="erp-label">GST / Tax Number</label>
+                        <label className="erp-label">GST / Tax Details</label>
                         <input 
                           type="text" 
                           className="erp-input"
@@ -449,18 +447,18 @@ const VendorsPage = () => {
         {/* ONBOARD MODAL */}
         {showCreateModal && (
           <div className="erp-modal-overlay">
-            <div className="erp-modal">
+            <div className="erp-modal" style={{ width: 'min(720px, 95vw)' }}>
               <div className="erp-modal__header">
                 <h3 className="erp-card__title">Onboard Supplier</h3>
                 <button 
-                  style={{ border: 0, background: 'transparent', fontSize: '1.5rem', cursor: 'pointer' }}
+                  style={{ border: 0, background: 'transparent', cursor: 'pointer' }}
                   onClick={() => setShowCreateModal(false)}
                 >
-                  &times;
+                  <X size={18} />
                 </button>
               </div>
               <form onSubmit={handleCreateVendor}>
-                <div className="erp-modal__body">
+                <div className="erp-modal__body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div className="erp-form">
                     <div className="erp-grid-2">
                       <div className="erp-form-group">
@@ -478,7 +476,7 @@ const VendorsPage = () => {
                         <input 
                           type="text" 
                           className="erp-input"
-                          placeholder="e.g. IT Devices, Chemicals"
+                          placeholder="e.g. Raw Materials"
                           value={newVendor.category} 
                           onChange={(e) => setNewVendor({ ...newVendor, category: e.target.value })}
                           required
@@ -510,7 +508,7 @@ const VendorsPage = () => {
 
                     <div className="erp-grid-2">
                       <div className="erp-form-group">
-                        <label className="erp-label">GSTIN / Tax Details</label>
+                        <label className="erp-label">GSTIN / Tax ID</label>
                         <input 
                           type="text" 
                           className="erp-input"
@@ -519,13 +517,13 @@ const VendorsPage = () => {
                         />
                       </div>
                       <div className="erp-form-group">
-                        <label className="erp-label">Link User Account (Optional)</label>
+                        <label className="erp-label">Associate User Account</label>
                         <select 
                           className="erp-select"
                           value={newVendor.user_id}
                           onChange={(e) => setNewVendor({ ...newVendor, user_id: e.target.value })}
                         >
-                          <option value="">-- Associate Login User --</option>
+                          <option value="">-- No linked user --</option>
                           {vendorUsers.map(vu => (
                             <option key={vu.id} value={vu.id}>{vu.name} ({vu.email})</option>
                           ))}
@@ -565,7 +563,6 @@ const VendorsPage = () => {
             </div>
           </div>
         )}
-      </div>
     </EnterpriseErpLayout>
   );
 };

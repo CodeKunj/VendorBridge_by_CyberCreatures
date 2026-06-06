@@ -1,8 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { EnterpriseErpLayout } from '../components/erp';
 import { useAuth } from '../context/AuthContext';
 import { erpApi } from '../api/erpApi';
+import { 
+  ShieldAlert, 
+  Search, 
+  Filter, 
+  RefreshCw, 
+  Eye, 
+  EyeOff, 
+  AlertCircle 
+} from 'lucide-react';
 
 const ActivityLogsPage = () => {
   const { user, logout } = useAuth();
@@ -18,6 +27,11 @@ const ActivityLogsPage = () => {
   const [selectedModule, setSelectedModule] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedLogId, setExpandedLogId] = useState(null);
+
+  const breadcrumbs = useMemo(() => ([
+    { label: 'Home', href: '/' },
+    { label: 'Activity Logs' }
+  ]), []);
 
   const loadActivityLogs = async () => {
     try {
@@ -42,7 +56,7 @@ const ActivityLogsPage = () => {
   }, [page]);
 
   const handleNavigate = (item) => {
-    navigate(`/${item.id}`);
+    navigate(item.id === 'dashboard' ? '/dashboard' : `/${item.id}`);
   };
 
   const handleLogout = async () => {
@@ -50,7 +64,6 @@ const ActivityLogsPage = () => {
     navigate('/login', { replace: true });
   };
 
-  // Filter and search logs client-side to make interactions lightning-fast
   const filteredLogs = logs.filter((log) => {
     const matchesModule = selectedModule === 'all' || (log.module || '').toLowerCase() === selectedModule.toLowerCase();
     const matchesSearch = 
@@ -73,30 +86,29 @@ const ActivityLogsPage = () => {
 
   return (
     <EnterpriseErpLayout
-      activeNavId="activity-logs"
-      breadcrumbs={[
-        { label: 'Home', href: '/' },
-        { label: 'Activity Logs' }
-      ]}
+      user={user}
       onNavigate={handleNavigate}
       onLogout={handleLogout}
+      onProfile={() => navigate('/dashboard')}
+      onSettings={() => navigate('/settings')}
+      breadcrumbs={breadcrumbs}
     >
-      <div className="erp-page-header">
-        <h1 className="erp-page-title">Activity & Audit Logs</h1>
-        <p className="erp-page-subtitle">Track operations, user modifications, and document transitions across ERP modules.</p>
-      </div>
+      <h1 className="erp-title">Activity & Audit Logs</h1>
+      <p className="erp-subtitle">Track operations, user modifications, and document transitions across ERP modules.</p>
 
       {error && (
-        <div className="erp-alert erp-alert--danger" style={{ marginBottom: '20px' }}>
-          <span>⚠️ {error}</span>
+        <div className="erp-alert erp-alert--danger">
+          <AlertCircle size={15} /> {error}
         </div>
       )}
 
       {/* Filter and Search Bar */}
       <section className="erp-card" style={{ marginBottom: '20px' }}>
-        <div className="erp-card__body" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ flex: '1 1 300px' }}>
-            <label className="erp-form-label" style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--erp-text-muted)' }}>Search Audit Logs</label>
+        <div className="erp-card__body" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div style={{ flex: '1 1 300px' }} className="erp-form-group">
+            <label className="erp-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Search size={13} /> Search Audit Logs
+            </label>
             <input 
               type="text" 
               className="erp-input"
@@ -106,8 +118,10 @@ const ActivityLogsPage = () => {
             />
           </div>
 
-          <div style={{ width: '220px' }}>
-            <label className="erp-form-label" style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--erp-text-muted)' }}>Filter Module</label>
+          <div style={{ width: '220px' }} className="erp-form-group">
+            <label className="erp-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Filter size={13} /> Filter Module
+            </label>
             <select 
               className="erp-select" 
               value={selectedModule} 
@@ -123,11 +137,11 @@ const ActivityLogsPage = () => {
           </div>
 
           <button 
-            className="erp-button erp-button--secondary" 
+            className="erp-btn erp-btn--outline" 
             onClick={loadActivityLogs}
-            style={{ marginTop: '20px', height: '44px' }}
+            style={{ height: '38px', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            Refresh Logs
+            <RefreshCw size={14} /> Refresh Logs
           </button>
         </div>
       </section>
@@ -136,16 +150,15 @@ const ActivityLogsPage = () => {
       <section className="erp-card">
         <div className="erp-card__body" style={{ padding: 0 }}>
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '50px' }}>
-              <span className="erp-spinner" />
-              <p style={{ marginTop: '16px', color: 'var(--erp-text-muted)' }}>Loading audit logs...</p>
+            <div style={{ textAlign: 'center', padding: '50px 0', color: 'var(--erp-outline)' }}>
+              Loading audit logs...
             </div>
           ) : filteredLogs.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '50px', color: 'var(--erp-text-muted)' }}>
-              No audit logs found. Try adjusting your filter or search.
+            <div style={{ textAlign: 'center', padding: '50px 0', color: 'var(--erp-outline)' }}>
+              No audit logs found.
             </div>
           ) : (
-            <div className="erp-table-wrapper" style={{ border: 0, borderRadius: 0, boxShadow: 'none' }}>
+            <div className="erp-table-wrapper" style={{ border: 0, borderRadius: 0 }}>
               <table className="erp-table">
                 <thead>
                   <tr>
@@ -174,7 +187,7 @@ const ActivityLogsPage = () => {
                         </td>
                         <td style={{ fontWeight: 600 }}>{log.users?.name || 'System / Guest'}</td>
                         <td>
-                          <span className="erp-badge erp-badge--draft" style={{ fontSize: '0.72rem' }}>
+                          <span className="erp-badge erp-badge--draft" style={{ fontSize: '0.7rem' }}>
                             {log.users?.role || 'SYSTEM'}
                           </span>
                         </td>
@@ -183,45 +196,47 @@ const ActivityLogsPage = () => {
                             {log.module}
                           </span>
                         </td>
-                        <td style={{ color: 'var(--erp-text)', fontWeight: 500 }}>
+                        <td>
                           {log.action}
                         </td>
-                        <td style={{ fontFamily: 'monospace', fontSize: '0.86rem', color: 'var(--erp-text-muted)' }}>
+                        <td style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--erp-outline)' }}>
                           {log.ip_address || '127.0.0.1'}
                         </td>
                         <td style={{ textAlign: 'right' }}>
                           <button 
-                            className="erp-button erp-button--secondary" 
-                            style={{ padding: '6px 12px', height: 'auto', fontSize: '0.8rem', borderRadius: '8px' }}
+                            className="erp-btn erp-btn--outline" 
+                            style={{ padding: '4px 10px', height: '28px', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                             onClick={() => setExpandedLogId(expandedLogId === log.id ? null : log.id)}
                           >
+                            {expandedLogId === log.id ? <EyeOff size={12} /> : <Eye size={12} />}
                             {expandedLogId === log.id ? 'Hide' : 'Inspect'}
                           </button>
                         </td>
                       </tr>
                       {expandedLogId === log.id && (
                         <tr>
-                          <td colSpan={7} style={{ background: '#f8fafc', padding: '16px 24px' }}>
-                            <div style={{ display: 'grid', gap: '8px' }}>
-                              <div style={{ fontSize: '0.82rem', color: 'var(--erp-text-muted)' }}>
+                          <td colSpan={7} style={{ background: 'var(--erp-surface-container-low)', padding: '16px 24px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <div style={{ fontSize: '0.8rem', color: 'var(--erp-outline)' }}>
                                 <strong>Log ID:</strong> {log.id}
                               </div>
                               {log.entity_id && (
-                                <div style={{ fontSize: '0.82rem', color: 'var(--erp-text-muted)' }}>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--erp-outline)' }}>
                                   <strong>Linked Entity ID:</strong> {log.entity_id}
                                 </div>
                               )}
                               <div>
-                                <strong style={{ fontSize: '0.82rem', color: 'var(--erp-text-muted)' }}>Log Metadata Parameters:</strong>
+                                <strong style={{ fontSize: '0.8rem', color: 'var(--erp-outline)' }}>Log Metadata Parameters:</strong>
                                 <pre style={{
-                                  background: '#0f172a',
-                                  color: '#38bdf8',
+                                  background: 'var(--erp-surface-container-highest)',
+                                  color: 'var(--erp-on-surface)',
                                   padding: '12px',
-                                  borderRadius: '10px',
-                                  fontSize: '0.82rem',
+                                  borderRadius: '8px',
+                                  fontSize: '0.78rem',
                                   fontFamily: 'monospace',
                                   marginTop: '6px',
-                                  overflowX: 'auto'
+                                  overflowX: 'auto',
+                                  border: '1px solid var(--erp-outline-variant)'
                                 }}>
                                   {JSON.stringify(log.metadata || {}, null, 2)}
                                 </pre>
@@ -242,19 +257,19 @@ const ActivityLogsPage = () => {
       {/* Pagination Controls */}
       {totalPages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
-          <span style={{ fontSize: '0.92rem', color: 'var(--erp-text-muted)' }}>
+          <span style={{ fontSize: '0.85rem', color: 'var(--erp-outline)' }}>
             Page <strong>{page}</strong> of <strong>{totalPages}</strong>
           </span>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button 
-              className="erp-button erp-button--secondary" 
+              className="erp-btn erp-btn--outline" 
               disabled={page === 1}
               onClick={() => setPage(p => Math.max(p - 1, 1))}
             >
               Previous
             </button>
             <button 
-              className="erp-button erp-button--secondary" 
+              className="erp-btn erp-btn--outline" 
               disabled={page === totalPages}
               onClick={() => setPage(p => Math.min(p + 1, totalPages))}
             >

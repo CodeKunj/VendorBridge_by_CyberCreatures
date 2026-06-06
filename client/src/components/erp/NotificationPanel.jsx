@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { X, Check } from 'lucide-react';
 
 const NotificationPanel = ({ open, notifications = [], onMarkRead, onMarkAllRead, onDelete, onClose }) => {
   const [activeTab, setActiveTab] = useState('all');
@@ -7,7 +8,6 @@ const NotificationPanel = ({ open, notifications = [], onMarkRead, onMarkAllRead
     return null;
   }
 
-  // Filter notifications by category
   const filteredNotifications = useMemo(() => {
     if (activeTab === 'all') return notifications;
     return notifications.filter(n => {
@@ -39,37 +39,37 @@ const NotificationPanel = ({ open, notifications = [], onMarkRead, onMarkAllRead
         <header className="erp-notification-panel__header" style={{ flexShrink: 0 }}>
           <div>
             <h2 className="erp-notification-panel__title">Notifications</h2>
-            <p className="erp-card__subtitle" style={{ margin: '2px 0 0' }}>Real-time system updates</p>
+            <p className="erp-card__subtitle" style={{ margin: '2px 0 0' }}>System alerts</p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {notifications.some(n => !n.read_at) && (
               <button 
                 onClick={onMarkAllRead} 
-                className="erp-button erp-button--secondary" 
-                style={{ fontSize: '0.78rem', padding: '6px 10px', height: 'auto', borderRadius: '10px' }}
+                className="erp-btn erp-btn--secondary" 
+                style={{ fontSize: '0.75rem', padding: '0 10px', height: '28px', borderRadius: 'var(--erp-radius-default)' }}
               >
                 Mark all read
               </button>
             )}
-            <button className="erp-icon-button" type="button" onClick={onClose} aria-label="Close notifications" style={{ width: '30px', height: '30px', borderRadius: '10px' }}>
-              ×
+            <button className="erp-icon-button" type="button" onClick={onClose} aria-label="Close notifications" style={{ width: '28px', height: '28px', borderRadius: 'var(--erp-radius-default)' }}>
+              <X size={14} />
             </button>
           </div>
         </header>
 
         {/* Tab Filters */}
-        <div style={{ display: 'flex', gap: '4px', padding: '10px 20px', borderBottom: '1px solid var(--erp-border)', overflowX: 'auto', background: '#fafbfc', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: '4px', padding: '10px 16px', borderBottom: '1px solid var(--erp-border)', overflowX: 'auto', background: 'var(--erp-surface-dim)', flexShrink: 0 }}>
           {['all', 'rfq', 'quotation', 'approval', 'po', 'invoice'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               style={{
                 border: 0,
-                background: activeTab === tab ? 'var(--erp-blue-900)' : 'transparent',
-                color: activeTab === tab ? '#fff' : 'var(--erp-text-muted)',
-                padding: '6px 12px',
-                borderRadius: '8px',
-                fontSize: '0.8rem',
+                background: activeTab === tab ? 'var(--erp-primary)' : 'transparent',
+                color: activeTab === tab ? '#fff' : 'var(--erp-on-surface-variant)',
+                padding: '6px 10px',
+                borderRadius: 'var(--erp-radius-default)',
+                fontSize: '0.75rem',
                 fontWeight: 600,
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
@@ -82,11 +82,10 @@ const NotificationPanel = ({ open, notifications = [], onMarkRead, onMarkAllRead
         </div>
 
         {/* Notification List Body */}
-        <div className="erp-notification-list" style={{ overflowY: 'auto', flex: 1, padding: '16px 20px' }}>
+        <div className="erp-notification-list" style={{ overflowY: 'auto', flex: 1, padding: '16px' }}>
           {filteredNotifications.length === 0 ? (
-            <div className="erp-notification-item" style={{ textAlign: 'center', padding: '30px 20px' }}>
-              <h3 className="erp-notification-item__title" style={{ color: 'var(--erp-text-muted)' }}>No notifications found</h3>
-              <p className="erp-notification-item__body">You have no alerts in this category.</p>
+            <div className="erp-notification-item" style={{ textAlign: 'center', padding: '30px 20px', border: 0 }}>
+              <h3 style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--erp-outline)' }}>No notifications</h3>
             </div>
           ) : (
             filteredNotifications.map((n) => (
@@ -95,8 +94,8 @@ const NotificationPanel = ({ open, notifications = [], onMarkRead, onMarkAllRead
                 key={n.id} 
                 style={{ 
                   position: 'relative', 
-                  borderLeft: !n.read_at ? '4px solid var(--erp-blue-700)' : '1px solid var(--erp-border)',
-                  background: !n.read_at ? 'rgba(45, 107, 179, 0.03)' : '#fff',
+                  borderLeft: !n.read_at ? '3px solid var(--erp-primary)' : '1px solid var(--erp-outline-variant)',
+                  background: !n.read_at ? 'rgba(38, 77, 217, 0.02)' : '#fff',
                   marginBottom: '10px'
                 }}
               >
@@ -105,21 +104,21 @@ const NotificationPanel = ({ open, notifications = [], onMarkRead, onMarkAllRead
                   <span>{new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
                 <h3 className="erp-notification-item__title">{n.title}</h3>
-                <p className="erp-notification-item__body" style={{ fontSize: '0.86rem', color: 'var(--erp-text)' }}>{n.message}</p>
+                <p className="erp-notification-item__body">{n.message}</p>
                 
                 {/* Actions Panel */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed var(--erp-border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed var(--erp-outline-variant)' }}>
                   {!n.read_at && (
                     <button 
                       onClick={() => onMarkRead(n.id)} 
-                      style={{ border: 0, background: 'transparent', color: 'var(--erp-blue-700)', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}
+                      style={{ border: 0, background: 'transparent', color: 'var(--erp-primary)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px' }}
                     >
-                      Mark read
+                      <Check size={12} /> Mark read
                     </button>
                   )}
                   <button 
                     onClick={() => onDelete(n.id)} 
-                    style={{ border: 0, background: 'transparent', color: '#b91c1c', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}
+                    style={{ border: 0, background: 'transparent', color: 'var(--erp-error)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
                   >
                     Delete
                   </button>

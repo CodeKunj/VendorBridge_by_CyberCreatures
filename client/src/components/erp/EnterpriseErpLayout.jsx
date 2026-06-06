@@ -6,26 +6,38 @@ import Breadcrumbs from './Breadcrumbs';
 import NotificationPanel from './NotificationPanel';
 import { erpApi } from '../../api/erpApi';
 import { useAuth } from '../../context/AuthContext';
+import {
+  LayoutDashboard,
+  Globe,
+  FileText,
+  Scale,
+  CheckSquare,
+  FileSpreadsheet,
+  Users,
+  Receipt,
+  BarChart3,
+  History,
+  Settings
+} from 'lucide-react';
 
 const defaultNavItems = [
-  { id: 'dashboard', label: 'Dashboard', caption: 'Overview and KPIs', icon: 'D' },
-  { id: 'vendor-portal', label: 'Vendor Portal', caption: 'Assigned RFQs and bids', icon: 'VP' },
-  { id: 'rfqs', label: 'RFQs', caption: 'Requests for quotation', icon: 'Q' },
-  { id: 'compare', label: 'Compare Bids', caption: 'Quotation compare matrix', icon: 'C' },
-  { id: 'approvals', label: 'Approvals', caption: 'Workflow approvals', icon: 'A' },
-  { id: 'purchase-orders', label: 'Purchase Orders', caption: 'Official PO documents', icon: 'PO' },
-  { id: 'vendors', label: 'Vendors', caption: 'Supplier records', icon: 'V' },
-  { id: 'invoices', label: 'Invoices', caption: 'Billing operations', icon: 'I' },
-  { id: 'reports', label: 'Reports', caption: 'Analytics and exports', icon: 'R' },
-  { id: 'activity-logs', label: 'Activity Logs', caption: 'System audit logs', icon: 'L', adminOnly: true },
-  { id: 'settings', label: 'Settings', caption: 'System configuration', icon: 'S' },
+  { id: 'dashboard', label: 'Dashboard', caption: 'Overview', icon: LayoutDashboard },
+  { id: 'vendor-portal', label: 'Vendor Portal', caption: 'Active bids', icon: Globe },
+  { id: 'rfqs', label: 'RFQs', caption: 'Quotations', icon: FileText },
+  { id: 'compare', label: 'Compare Bids', caption: 'Comparison', icon: Scale },
+  { id: 'approvals', label: 'Approvals', caption: 'Workflow', icon: CheckSquare },
+  { id: 'purchase-orders', label: 'Purchase Orders', caption: 'POs', icon: FileSpreadsheet },
+  { id: 'vendors', label: 'Vendors', caption: 'Directory', icon: Users },
+  { id: 'invoices', label: 'Invoices', caption: 'Billing', icon: Receipt },
+  { id: 'reports', label: 'Reports', caption: 'Analytics', icon: BarChart3 },
+  { id: 'activity-logs', label: 'Activity Logs', caption: 'Audit trail', icon: History, adminOnly: true },
+  { id: 'settings', label: 'Settings', caption: 'System config', icon: Settings },
 ];
 
 const EnterpriseErpLayout = ({
   breadcrumbs = [
     { label: 'Home', href: '/' },
     { label: 'Dashboard', href: '/dashboard' },
-    { label: 'Operations' },
   ],
   activeNavId = 'dashboard',
   onNavigate,
@@ -34,12 +46,10 @@ const EnterpriseErpLayout = ({
   onSettings,
   children,
 }) => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
-  
-  // Notification State
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -48,13 +58,11 @@ const EnterpriseErpLayout = ({
     roleLabel: user?.roleLabel || user?.role || 'ERP User',
   }), [user]);
 
-  // Filter Nav Items based on user role
   const navItems = useMemo(() => {
     return defaultNavItems.filter(item => {
       if (item.adminOnly && user?.role !== 'admin') {
         return false;
       }
-      // Vendors don't see core procurement screens
       if (user?.role === 'vendor' && ['dashboard', 'vendors', 'compare', 'reports', 'activity-logs'].includes(item.id)) {
         return false;
       }
@@ -62,7 +70,6 @@ const EnterpriseErpLayout = ({
     });
   }, [user]);
 
-  // Fetch notifications helper
   const loadNotifications = async () => {
     try {
       if (!user) return;
@@ -77,12 +84,11 @@ const EnterpriseErpLayout = ({
     }
   };
 
-  // Poll notifications in the background for real-time alerts
   useEffect(() => {
     loadNotifications();
     const interval = setInterval(() => {
       loadNotifications();
-    }, 10000); // Poll every 10 seconds
+    }, 10000);
     return () => clearInterval(interval);
   }, [user]);
 

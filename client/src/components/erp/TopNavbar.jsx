@@ -1,4 +1,5 @@
 import React from 'react';
+import { Menu, Bell } from 'lucide-react';
 import SearchBar from './SearchBar';
 import UserProfileDropdown from './UserProfileDropdown';
 
@@ -15,14 +16,19 @@ const TopNavbar = ({
 }) => (
   <header className="erp-topbar">
     <button className="erp-icon-button erp-mobile-toggle" type="button" onClick={onToggleSidebar} aria-label="Open sidebar">
-      ☰
+      <Menu size={18} />
     </button>
 
     <SearchBar value={searchValue} onChange={onSearchChange} />
 
     <div className="erp-topbar__actions">
       <button className="erp-icon-button" type="button" onClick={onToggleNotifications} aria-label="Open notifications">
-        🔔{notificationCount > 0 ? <span aria-hidden="true">{notificationCount}</span> : null}
+        <Bell size={18} />
+        {notificationCount > 0 ? (
+          <span className="erp-icon-button__badge" aria-hidden="true">
+            {notificationCount}
+          </span>
+        ) : null}
       </button>
       <UserProfileDropdown
         user={user}

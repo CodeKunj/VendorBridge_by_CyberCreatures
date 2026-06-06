@@ -3,6 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { EnterpriseErpLayout } from '../components/erp';
 import { useAuth } from '../context/AuthContext';
 import { erpApi } from '../api/erpApi';
+import { 
+  Building2, 
+  Mail, 
+  FileText, 
+  Receipt, 
+  Bell, 
+  Workflow, 
+  Key, 
+  ShieldAlert, 
+  Settings,
+  AlertCircle, 
+  Check,
+  Send
+} from 'lucide-react';
 
 const SettingsPage = () => {
   const { user, logout } = useAuth();
@@ -10,7 +24,7 @@ const SettingsPage = () => {
 
   // Primary Tabs: 'config' | 'audit'
   const [activeTab, setActiveTab] = useState('config');
-  // Config Section Tabs: 'company' | 'smtp' | 'templates' | 'invoice' | 'notifications' | 'workflow' | 'apis'
+  // Config Section Tabs
   const [activeConfigSection, setActiveConfigSection] = useState('company');
 
   // Load States
@@ -106,14 +120,12 @@ const SettingsPage = () => {
     setSuccess('');
     try {
       setLoading(true);
-      // Determine settings category mapping
       let category = 'General';
       if (activeConfigSection === 'smtp' || activeConfigSection === 'templates') category = 'Email';
       else if (activeConfigSection === 'invoice') category = 'Finance';
       else if (activeConfigSection === 'workflow') category = 'Workflow';
       else if (activeConfigSection === 'apis') category = 'Security';
 
-      // Save each setting sequentially
       await Promise.all(
         sectionKeys.map(key => {
           return erpApi.settings.update({
@@ -150,553 +162,578 @@ const SettingsPage = () => {
   };
 
   const handleNavigate = (item) => {
-    navigate(`/${item.id}`);
+    navigate(item.id === 'dashboard' ? '/dashboard' : `/${item.id}`);
   };
 
   return (
     <EnterpriseErpLayout
-      activeNavId="settings"
-      breadcrumbs={[
-        { label: 'Home', href: '/' },
-        { label: 'System Configuration Settings' }
-      ]}
+      user={user}
       onNavigate={handleNavigate}
       onLogout={async () => {
         await logout();
         navigate('/login', { replace: true });
       }}
+      onProfile={() => navigate('/dashboard')}
+      onSettings={() => navigate('/settings')}
     >
-      <div className="erp-page-header">
-        <h1 className="erp-page-title">System & Administrative Settings</h1>
-        <p className="erp-page-subtitle">Manage company profiles, SMTP mail dispatchers, threshold workflows, audit lists, and secure API keys.</p>
+      <div className="erp-breadcrumbs">
+        <span className="erp-breadcrumbs__item">ERP Dashboard</span>
+        <span className="erp-breadcrumbs__separator">/</span>
+        <span className="erp-breadcrumbs__current">System Settings</span>
       </div>
 
-      {error && <div className="erp-alert erp-alert--danger" style={{ margin: '10px 0' }}>⚠️ {error}</div>}
-      {success && <div className="erp-alert erp-alert--success" style={{ margin: '10px 0' }}>✅ {success}</div>}
+      <div className="erp-content">
+        <h1 className="erp-title">System & Administrative Settings</h1>
+        <p className="erp-subtitle">Manage company profiles, SMTP mail dispatchers, threshold workflows, audit lists, and secure API keys.</p>
 
-      {/* Tabs */}
-      <div className="erp-tabs" style={{ marginBottom: '20px' }}>
-        <button 
-          className={`erp-tab ${activeTab === 'config' ? 'is-active' : ''}`}
-          onClick={() => { setActiveTab('config'); setSuccess(''); }}
-        >
-          App Settings
-        </button>
-        <button 
-          className={`erp-tab ${activeTab === 'audit' ? 'is-active' : ''}`}
-          onClick={() => { setActiveTab('audit'); setSuccess(''); }}
-        >
-          Security Audit Logs
-        </button>
-      </div>
+        {error && <div className="erp-alert erp-alert--danger"><AlertCircle size={15} /> {error}</div>}
+        {success && <div className="erp-alert erp-alert--success"><Check size={15} /> {success}</div>}
 
-      {loading && settings.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '50px' }}>
-          <span className="erp-spinner" />
-          <p style={{ marginTop: '16px', color: 'var(--erp-text-muted)' }}>Loading parameters...</p>
+        {/* Tabs */}
+        <div className="erp-tabs" style={{ marginBottom: '20px' }}>
+          <button 
+            className={`erp-tab ${activeTab === 'config' ? 'is-active' : ''}`}
+            onClick={() => { setActiveTab('config'); setSuccess(''); }}
+          >
+            <Settings size={14} /> App Settings
+          </button>
+          <button 
+            className={`erp-tab ${activeTab === 'audit' ? 'is-active' : ''}`}
+            onClick={() => { setActiveTab('audit'); setSuccess(''); }}
+          >
+            <ShieldAlert size={14} /> Security Audit Logs
+          </button>
         </div>
-      )}
 
-      {/* App Configuration Tab layout */}
-      {activeTab === 'config' && !loading && (
-        <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '20px', alignItems: 'start' }}>
-          {/* Side Menu inside Card */}
-          <div className="erp-card" style={{ padding: '10px' }}>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '4px' }}>
-              {[
-                { id: 'company', label: '🏢 Company Details' },
-                { id: 'smtp', label: '📧 SMTP Server' },
-                { id: 'templates', label: '✉️ Email Templates' },
-                { id: 'invoice', label: '🧾 Invoice Config' },
-                { id: 'notifications', label: '🔔 Alerts Settings' },
-                { id: 'workflow', label: '⚙️ Workflows' },
-                { id: 'apis', label: '🔌 API Integrations' }
-              ].map(sec => (
-                <li key={sec.id}>
-                  <button
-                    onClick={() => { setActiveConfigSection(sec.id); setSuccess(''); }}
-                    style={{
-                      width: '100%',
-                      textAlign: 'left',
-                      border: 0,
-                      background: activeConfigSection === sec.id ? 'var(--erp-blue-100)' : 'transparent',
-                      color: activeConfigSection === sec.id ? 'var(--erp-blue-900)' : 'var(--erp-text)',
-                      padding: '12px 16px',
-                      borderRadius: '10px',
-                      fontWeight: activeConfigSection === sec.id ? '700' : '500',
-                      cursor: 'pointer',
-                      fontSize: '0.92rem',
-                      transition: 'all 120ms ease'
-                    }}
-                  >
-                    {sec.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
+        {loading && settings.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '50px 0', color: 'var(--erp-outline)' }}>
+            Loading parameters...
           </div>
+        )}
 
-          {/* Form Content Area */}
-          <div style={{ display: 'grid', gap: '20px' }}>
-            {/* Company Details Form */}
-            {activeConfigSection === 'company' && (
-              <section className="erp-card">
-                <div className="erp-card__header">
-                  <h3 className="erp-card__title">Company Profile & Branding</h3>
-                  <p className="erp-card__subtitle">Default details injected into POs and Invoices.</p>
-                </div>
-                <div className="erp-card__body" style={{ display: 'grid', gap: '16px' }}>
-                  <div className="erp-grid-2">
-                    <div>
-                      <label className="erp-form-label">Corporate Registered Name</label>
-                      <input 
-                        type="text" 
-                        className="erp-input" 
-                        value={formData.company_name} 
-                        onChange={(e) => handleFieldChange('company_name', e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="erp-form-label">GSTIN / Tax Registration Number</label>
-                      <input 
-                        type="text" 
-                        className="erp-input" 
-                        value={formData.company_gstin} 
-                        onChange={(e) => handleFieldChange('company_gstin', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="erp-form-label">Head Office Address</label>
-                    <textarea 
-                      className="erp-textarea" 
-                      value={formData.company_address} 
-                      onChange={(e) => handleFieldChange('company_address', e.target.value)}
-                    />
-                  </div>
-                  <div className="erp-grid-2">
-                    <div>
-                      <label className="erp-form-label">Official Accounts Email</label>
-                      <input 
-                        type="email" 
-                        className="erp-input" 
-                        value={formData.company_email} 
-                        onChange={(e) => handleFieldChange('company_email', e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="erp-form-label">Corporate Contact Line</label>
-                      <input 
-                        type="text" 
-                        className="erp-input" 
-                        value={formData.company_phone} 
-                        onChange={(e) => handleFieldChange('company_phone', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <button 
-                    className="erp-button" 
-                    onClick={() => handleSaveSection(['company_name', 'company_gstin', 'company_address', 'company_email', 'company_phone'], 'Company Details')}
-                  >
-                    Save Company Profile
-                  </button>
-                </div>
-              </section>
-            )}
+        {/* App Configuration Tab layout */}
+        {activeTab === 'config' && !loading && (
+          <div className="erp-settings-layout">
+            {/* Side Menu inside Card */}
+            <div className="erp-card" style={{ padding: '8px' }}>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '4px' }}>
+                {[
+                  { id: 'company', label: 'Company Details', icon: Building2 },
+                  { id: 'smtp', label: 'SMTP Server', icon: Mail },
+                  { id: 'templates', label: 'Email Templates', icon: FileText },
+                  { id: 'invoice', label: 'Invoice Config', icon: Receipt },
+                  { id: 'notifications', label: 'Alerts Settings', icon: Bell },
+                  { id: 'workflow', label: 'Workflows', icon: Workflow },
+                  { id: 'apis', label: 'API Integrations', icon: Key }
+                ].map(sec => {
+                  const Icon = sec.icon;
+                  return (
+                    <li key={sec.id}>
+                      <button
+                        onClick={() => { setActiveConfigSection(sec.id); setSuccess(''); }}
+                        style={{
+                          width: '100%',
+                          textAlign: 'left',
+                          border: 0,
+                          background: activeConfigSection === sec.id ? 'var(--erp-surface-container)' : 'transparent',
+                          color: activeConfigSection === sec.id ? 'var(--erp-primary)' : 'var(--erp-on-surface-variant)',
+                          padding: '10px 14px',
+                          borderRadius: '8px',
+                          fontWeight: activeConfigSection === sec.id ? '600' : '500',
+                          cursor: 'pointer',
+                          fontSize: '0.85rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <Icon size={16} />
+                        {sec.label}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
 
-            {/* SMTP Form */}
-            {activeConfigSection === 'smtp' && (
-              <>
+            {/* Form Content Area */}
+            <div style={{ display: 'grid', gap: '20px' }}>
+              {/* Company Details Form */}
+              {activeConfigSection === 'company' && (
                 <section className="erp-card">
                   <div className="erp-card__header">
-                    <h3 className="erp-card__title">SMTP Mail Dispatch Configurations</h3>
-                    <p className="erp-card__subtitle">Parameters used to send out RFQs, bidding invitations, POs, and Invoice approvals.</p>
+                    <h3 className="erp-card__title">Company Profile & Branding</h3>
+                    <p className="erp-card__subtitle">Default details injected into POs and Invoices.</p>
                   </div>
                   <div className="erp-card__body" style={{ display: 'grid', gap: '16px' }}>
-                    <div className="erp-grid-3">
-                      <div>
-                        <label className="erp-form-label">SMTP Hostname</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div className="erp-form-group" style={{ margin: 0 }}>
+                        <label className="erp-label">Corporate Registered Name</label>
                         <input 
                           type="text" 
                           className="erp-input" 
-                          placeholder="smtp.mailgun.org"
-                          value={formData.smtp_host} 
-                          onChange={(e) => handleFieldChange('smtp_host', e.target.value)}
+                          value={formData.company_name} 
+                          onChange={(e) => handleFieldChange('company_name', e.target.value)}
                         />
                       </div>
-                      <div>
-                        <label className="erp-form-label">SMTP Port</label>
+                      <div className="erp-form-group" style={{ margin: 0 }}>
+                        <label className="erp-label">GSTIN / Tax Reference</label>
                         <input 
                           type="text" 
                           className="erp-input" 
-                          placeholder="587"
-                          value={formData.smtp_port} 
-                          onChange={(e) => handleFieldChange('smtp_port', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label className="erp-form-label">Sender Email (From)</label>
-                        <input 
-                          type="text" 
-                          className="erp-input" 
-                          placeholder="no-reply@enterprise.com"
-                          value={formData.smtp_from_email} 
-                          onChange={(e) => handleFieldChange('smtp_from_email', e.target.value)}
+                          value={formData.company_gstin} 
+                          onChange={(e) => handleFieldChange('company_gstin', e.target.value)}
                         />
                       </div>
                     </div>
-                    <div className="erp-grid-2">
-                      <div>
-                        <label className="erp-form-label">SMTP Username</label>
+                    <div className="erp-form-group" style={{ margin: 0 }}>
+                      <label className="erp-label">Head Office Address</label>
+                      <textarea 
+                        className="erp-textarea" 
+                        value={formData.company_address} 
+                        onChange={(e) => handleFieldChange('company_address', e.target.value)}
+                      />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div className="erp-form-group" style={{ margin: 0 }}>
+                        <label className="erp-label">Official Accounts Email</label>
+                        <input 
+                          type="email" 
+                          className="erp-input" 
+                          value={formData.company_email} 
+                          onChange={(e) => handleFieldChange('company_email', e.target.value)}
+                        />
+                      </div>
+                      <div className="erp-form-group" style={{ margin: 0 }}>
+                        <label className="erp-label">Corporate Contact Line</label>
                         <input 
                           type="text" 
                           className="erp-input" 
-                          value={formData.smtp_username} 
-                          onChange={(e) => handleFieldChange('smtp_username', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label className="erp-form-label">SMTP Password</label>
-                        <input 
-                          type="password" 
-                          className="erp-input" 
-                          placeholder="••••••••••••••••"
-                          value={formData.smtp_password} 
-                          onChange={(e) => handleFieldChange('smtp_password', e.target.value)}
+                          value={formData.company_phone} 
+                          onChange={(e) => handleFieldChange('company_phone', e.target.value)}
                         />
                       </div>
                     </div>
                     <button 
-                      className="erp-button" 
-                      onClick={() => handleSaveSection(['smtp_host', 'smtp_port', 'smtp_from_email', 'smtp_username', 'smtp_password'], 'SMTP Mail Server')}
+                      className="erp-btn erp-btn--primary" 
+                      style={{ width: 'fit-content' }}
+                      onClick={() => handleSaveSection(['company_name', 'company_gstin', 'company_address', 'company_email', 'company_phone'], 'Company Details')}
                     >
-                      Save Mail Server Settings
+                      Save Company Profile
                     </button>
                   </div>
                 </section>
+              )}
 
-                {/* SMTP Test Card */}
+              {/* SMTP Form */}
+              {activeConfigSection === 'smtp' && (
+                <>
+                  <section className="erp-card">
+                    <div className="erp-card__header">
+                      <h3 className="erp-card__title">SMTP Mail Dispatch Configurations</h3>
+                      <p className="erp-card__subtitle">Parameters used to send out RFQs, bidding invitations, POs, and Invoice approvals.</p>
+                    </div>
+                    <div className="erp-card__body" style={{ display: 'grid', gap: '16px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
+                        <div className="erp-form-group" style={{ margin: 0 }}>
+                          <label className="erp-label">SMTP Hostname</label>
+                          <input 
+                            type="text" 
+                            className="erp-input" 
+                            placeholder="smtp.mailgun.org"
+                            value={formData.smtp_host} 
+                            onChange={(e) => handleFieldChange('smtp_host', e.target.value)}
+                          />
+                        </div>
+                        <div className="erp-form-group" style={{ margin: 0 }}>
+                          <label className="erp-label">SMTP Port</label>
+                          <input 
+                            type="text" 
+                            className="erp-input" 
+                            placeholder="587"
+                            value={formData.smtp_port} 
+                            onChange={(e) => handleFieldChange('smtp_port', e.target.value)}
+                          />
+                        </div>
+                        <div className="erp-form-group" style={{ margin: 0 }}>
+                          <label className="erp-label">Sender Email (From)</label>
+                          <input 
+                            type="text" 
+                            className="erp-input" 
+                            placeholder="no-reply@enterprise.com"
+                            value={formData.smtp_from_email} 
+                            onChange={(e) => handleFieldChange('smtp_from_email', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div className="erp-form-group" style={{ margin: 0 }}>
+                          <label className="erp-label">SMTP Username</label>
+                          <input 
+                            type="text" 
+                            className="erp-input" 
+                            value={formData.smtp_username} 
+                            onChange={(e) => handleFieldChange('smtp_username', e.target.value)}
+                          />
+                        </div>
+                        <div className="erp-form-group" style={{ margin: 0 }}>
+                          <label className="erp-label">SMTP Password</label>
+                          <input 
+                            type="password" 
+                            className="erp-input" 
+                            placeholder="••••••••••••••••"
+                            value={formData.smtp_password} 
+                            onChange={(e) => handleFieldChange('smtp_password', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <button 
+                        className="erp-btn erp-btn--primary" 
+                        style={{ width: 'fit-content' }}
+                        onClick={() => handleSaveSection(['smtp_host', 'smtp_port', 'smtp_from_email', 'smtp_username', 'smtp_password'], 'SMTP Mail Server')}
+                      >
+                        Save Mail Server Settings
+                      </button>
+                    </div>
+                  </section>
+
+                  {/* SMTP Test Card */}
+                  <section className="erp-card">
+                    <div className="erp-card__header">
+                      <h3 className="erp-card__title">Test Mail Sender Integration</h3>
+                      <p className="erp-card__subtitle">Send a secure verification test email utilizing the active transporter configs.</p>
+                    </div>
+                    <div className="erp-card__body">
+                      <form onSubmit={handleSendTestEmail} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+                        <div className="erp-form-group" style={{ margin: 0, flexGrow: 1, maxWidth: '350px' }}>
+                          <label className="erp-label">Recipient Email</label>
+                          <input 
+                            type="email" 
+                            className="erp-input" 
+                            placeholder="test-recipient@domain.com" 
+                            value={testEmail} 
+                            onChange={(e) => setTestEmail(e.target.value)} 
+                            required
+                          />
+                        </div>
+                        <button type="submit" className="erp-btn erp-btn--outline" disabled={sendingEmail} style={{ height: '38px' }}>
+                          <Send size={14} /> {sendingEmail ? 'Sending...' : 'Send Test'}
+                        </button>
+                      </form>
+                    </div>
+                  </section>
+                </>
+              )}
+
+              {/* Email Templates Form */}
+              {activeConfigSection === 'templates' && (
                 <section className="erp-card">
                   <div className="erp-card__header">
-                    <h3 className="erp-card__title">Test Mail Sender Integration</h3>
-                    <p className="erp-card__subtitle">Send a secure verification test email utilizing the active transporter configs.</p>
+                    <h3 className="erp-card__title">Custom Email Sourcing Templates</h3>
+                    <p className="erp-card__subtitle">Tailor automated vendor communications and reminders.</p>
                   </div>
-                  <div className="erp-card__body">
-                    <form onSubmit={handleSendTestEmail} style={{ display: 'flex', gap: '12px' }}>
-                      <input 
-                        type="email" 
-                        className="erp-input" 
-                        placeholder="test-recipient@gmail.com" 
-                        value={testEmail} 
-                        onChange={(e) => setTestEmail(e.target.value)} 
-                        required
-                        style={{ maxWidth: '350px' }}
-                      />
-                      <button type="submit" className="erp-button erp-button--secondary" disabled={sendingEmail}>
-                        {sendingEmail ? 'Dispatching...' : '📧 Send Test Email'}
-                      </button>
-                    </form>
+                  <div className="erp-card__body" style={{ display: 'grid', gap: '20px' }}>
+                    <div>
+                      <h4 style={{ margin: '0 0 10px', fontSize: '0.9rem', fontWeight: 600 }}>Template: RFQ Invitation</h4>
+                      <div className="erp-form-group">
+                        <label className="erp-label">Email Subject</label>
+                        <input 
+                          type="text" 
+                          className="erp-input" 
+                          value={formData.template_rfq_subject} 
+                          onChange={(e) => handleFieldChange('template_rfq_subject', e.target.value)}
+                        />
+                      </div>
+                      <div className="erp-form-group">
+                        <label className="erp-label">Email Body Content</label>
+                        <textarea 
+                          className="erp-textarea" 
+                          value={formData.template_rfq_body} 
+                          onChange={(e) => handleFieldChange('template_rfq_body', e.target.value)}
+                          style={{ minHeight: '120px' }}
+                        />
+                      </div>
+                    </div>
+
+                    <hr style={{ border: 0, borderTop: '1px solid var(--erp-border)' }} />
+
+                    <div>
+                      <h4 style={{ margin: '0 0 10px', fontSize: '0.9rem', fontWeight: 600 }}>Template: PO Dispatch Alert</h4>
+                      <div className="erp-form-group">
+                        <label className="erp-label">Email Subject</label>
+                        <input 
+                          type="text" 
+                          className="erp-input" 
+                          value={formData.template_po_subject} 
+                          onChange={(e) => handleFieldChange('template_po_subject', e.target.value)}
+                        />
+                      </div>
+                      <div className="erp-form-group">
+                        <label className="erp-label">Email Body Content</label>
+                        <textarea 
+                          className="erp-textarea" 
+                          value={formData.template_po_body} 
+                          onChange={(e) => handleFieldChange('template_po_body', e.target.value)}
+                          style={{ minHeight: '120px' }}
+                        />
+                      </div>
+                    </div>
+
+                    <button 
+                      className="erp-btn erp-btn--primary" 
+                      style={{ width: 'fit-content' }}
+                      onClick={() => handleSaveSection(['template_rfq_subject', 'template_rfq_body', 'template_po_subject', 'template_po_body'], 'Email Templates')}
+                    >
+                      Save Email Templates
+                    </button>
                   </div>
                 </section>
-              </>
-            )}
+              )}
 
-            {/* Email Templates Form */}
-            {activeConfigSection === 'templates' && (
-              <section className="erp-card">
-                <div className="erp-card__header">
-                  <h3 className="erp-card__title">Custom Email Sourcing Templates</h3>
-                  <p className="erp-card__subtitle">Tailor automated vendor communications and reminders.</p>
-                </div>
-                <div className="erp-card__body" style={{ display: 'grid', gap: '20px' }}>
-                  <div>
-                    <h4 style={{ margin: '0 0 10px' }}>Template: published RFQ invitation</h4>
-                    <label className="erp-form-label">Email Subject</label>
-                    <input 
-                      type="text" 
-                      className="erp-input" 
-                      value={formData.template_rfq_subject} 
-                      onChange={(e) => handleFieldChange('template_rfq_subject', e.target.value)}
-                    />
-                    <label className="erp-form-label" style={{ marginTop: '10px' }}>Email Body Content</label>
-                    <textarea 
-                      className="erp-textarea" 
-                      value={formData.template_rfq_body} 
-                      onChange={(e) => handleFieldChange('template_rfq_body', e.target.value)}
-                      style={{ minHeight: '120px' }}
-                    />
+              {/* Invoice Configuration Form */}
+              {activeConfigSection === 'invoice' && (
+                <section className="erp-card">
+                  <div className="erp-card__header">
+                    <h3 className="erp-card__title">Billing & Invoice Parameters</h3>
+                    <p className="erp-card__subtitle">Default rates, due cycles, and prefix masks.</p>
                   </div>
-
-                  <hr style={{ border: 0, borderTop: '1px solid var(--erp-border)' }} />
-
-                  <div>
-                    <h4 style={{ margin: '0 0 10px' }}>Template: PO dispatch alert</h4>
-                    <label className="erp-form-label">Email Subject</label>
-                    <input 
-                      type="text" 
-                      className="erp-input" 
-                      value={formData.template_po_subject} 
-                      onChange={(e) => handleFieldChange('template_po_subject', e.target.value)}
-                    />
-                    <label className="erp-form-label" style={{ marginTop: '10px' }}>Email Body Content</label>
-                    <textarea 
-                      className="erp-textarea" 
-                      value={formData.template_po_body} 
-                      onChange={(e) => handleFieldChange('template_po_body', e.target.value)}
-                      style={{ minHeight: '120px' }}
-                    />
+                  <div className="erp-card__body" style={{ display: 'grid', gap: '16px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
+                      <div className="erp-form-group" style={{ margin: 0 }}>
+                        <label className="erp-label">Default Tax GST (%)</label>
+                        <input 
+                          type="number" 
+                          className="erp-input" 
+                          value={formData.invoice_tax_percentage} 
+                          onChange={(e) => handleFieldChange('invoice_tax_percentage', e.target.value)}
+                        />
+                      </div>
+                      <div className="erp-form-group" style={{ margin: 0 }}>
+                        <label className="erp-label">Default Due Period (Days)</label>
+                        <input 
+                          type="number" 
+                          className="erp-input" 
+                          value={formData.invoice_due_days} 
+                          onChange={(e) => handleFieldChange('invoice_due_days', e.target.value)}
+                        />
+                      </div>
+                      <div className="erp-form-group" style={{ margin: 0 }}>
+                        <label className="erp-label">Invoice Code Prefix</label>
+                        <input 
+                          type="text" 
+                          className="erp-input" 
+                          value={formData.invoice_prefix} 
+                          onChange={(e) => handleFieldChange('invoice_prefix', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <button 
+                      className="erp-btn erp-btn--primary" 
+                      style={{ width: 'fit-content' }}
+                      onClick={() => handleSaveSection(['invoice_tax_percentage', 'invoice_due_days', 'invoice_prefix'], 'Invoice Settings')}
+                    >
+                      Save Invoice Configurations
+                    </button>
                   </div>
+                </section>
+              )}
 
-                  <button 
-                    className="erp-button" 
-                    onClick={() => handleSaveSection(['template_rfq_subject', 'template_rfq_body', 'template_po_subject', 'template_po_body'], 'Email Templates')}
-                  >
-                    Save Email Templates
-                  </button>
-                </div>
-              </section>
-            )}
+              {/* Notification Form */}
+              {activeConfigSection === 'notifications' && (
+                <section className="erp-card">
+                  <div className="erp-card__header">
+                    <h3 className="erp-card__title">Global Notification Policies</h3>
+                    <p className="erp-card__subtitle">Activate/deactivate dispatch channels for system triggers.</p>
+                  </div>
+                  <div className="erp-card__body" style={{ display: 'grid', gap: '20px' }}>
+                    <div style={{ display: 'grid', gap: '12px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={Boolean(formData.notifications_enable_email)} 
+                          onChange={(e) => handleFieldChange('notifications_enable_email', e.target.checked)}
+                        />
+                        <span>Enable SMTP transactional emails for RFQ/PO operations</span>
+                      </label>
 
-            {/* Invoice Configuration Form */}
-            {activeConfigSection === 'invoice' && (
-              <section className="erp-card">
-                <div className="erp-card__header">
-                  <h3 className="erp-card__title">Billing & Invoice Parameters</h3>
-                  <p className="erp-card__subtitle">Default rates, due cycles, and prefix masks.</p>
-                </div>
-                <div className="erp-card__body" style={{ display: 'grid', gap: '16px' }}>
-                  <div className="erp-grid-3">
-                    <div>
-                      <label className="erp-form-label">Default Tax GST (%)</label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={Boolean(formData.notifications_enable_sms)} 
+                          onChange={(e) => handleFieldChange('notifications_enable_sms', e.target.checked)}
+                        />
+                        <span>Enable SMS/WhatsApp transactional alerts on workflows</span>
+                      </label>
+
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={Boolean(formData.notifications_enable_push)} 
+                          onChange={(e) => handleFieldChange('notifications_enable_push', e.target.checked)}
+                        />
+                        <span>Enable real-time notification sidebar updates for users</span>
+                      </label>
+                    </div>
+                    <button 
+                      className="erp-btn erp-btn--primary" 
+                      style={{ width: 'fit-content' }}
+                      onClick={() => handleSaveSection(['notifications_enable_email', 'notifications_enable_sms', 'notifications_enable_push'], 'Notification Settings')}
+                    >
+                      Save Notification Policies
+                    </button>
+                  </div>
+                </section>
+              )}
+
+              {/* Workflow Form */}
+              {activeConfigSection === 'workflow' && (
+                <section className="erp-card">
+                  <div className="erp-card__header">
+                    <h3 className="erp-card__title">Procurement Workflow Policies</h3>
+                    <p className="erp-card__subtitle">Establish automatic validation thresholds and multilevel rules.</p>
+                  </div>
+                  <div className="erp-card__body" style={{ display: 'grid', gap: '16px' }}>
+                    <div className="erp-form-group">
+                      <label className="erp-label">Auto PO Approval Limit ($)</label>
                       <input 
                         type="number" 
                         className="erp-input" 
-                        value={formData.invoice_tax_percentage} 
-                        onChange={(e) => handleFieldChange('invoice_tax_percentage', e.target.value)}
+                        placeholder="5000"
+                        value={formData.workflow_po_auto_approve_threshold} 
+                        onChange={(e) => handleFieldChange('workflow_po_auto_approve_threshold', e.target.value)}
                       />
+                      <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: 'var(--erp-outline)' }}>POs generated under this amount are automatically approved. Higher amounts require manager oversight.</p>
                     </div>
+
                     <div>
-                      <label className="erp-form-label">Default Due Period (Days)</label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', cursor: 'pointer', marginTop: '10px' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={Boolean(formData.workflow_require_multilevel_approvals)} 
+                          onChange={(e) => handleFieldChange('workflow_require_multilevel_approvals', e.target.checked)}
+                        />
+                        <span>Require multi-level board approvals for contract values exceeding $100k</span>
+                      </label>
+                    </div>
+
+                    <button 
+                      className="erp-btn erp-btn--primary" 
+                      style={{ width: 'fit-content' }}
+                      onClick={() => handleSaveSection(['workflow_po_auto_approve_threshold', 'workflow_require_multilevel_approvals'], 'Workflow Settings')}
+                    >
+                      Save Workflow Configurations
+                    </button>
+                  </div>
+                </section>
+              )}
+
+              {/* API Integrations Form */}
+              {activeConfigSection === 'apis' && (
+                <section className="erp-card">
+                  <div className="erp-card__header">
+                    <h3 className="erp-card__title">Secure API Gateway Integrations</h3>
+                    <p className="erp-card__subtitle">Encrypted API credentials for LLMs and dispatch gateways.</p>
+                  </div>
+                  <div className="erp-card__body" style={{ display: 'grid', gap: '16px' }}>
+                    <div className="erp-form-group">
+                      <label className="erp-label">OpenAI API Key</label>
                       <input 
-                        type="number" 
+                        type="password" 
                         className="erp-input" 
-                        value={formData.invoice_due_days} 
-                        onChange={(e) => handleFieldChange('invoice_due_days', e.target.value)}
+                        placeholder="sk-••••••••••••••••"
+                        value={formData.openai_api_key} 
+                        onChange={(e) => handleFieldChange('openai_api_key', e.target.value)}
                       />
                     </div>
-                    <div>
-                      <label className="erp-form-label">Invoice Code Prefix</label>
+
+                    <div className="erp-form-group">
+                      <label className="erp-label">Gemini AI API Key</label>
                       <input 
-                        type="text" 
+                        type="password" 
                         className="erp-input" 
-                        value={formData.invoice_prefix} 
-                        onChange={(e) => handleFieldChange('invoice_prefix', e.target.value)}
+                        placeholder="AIzaSy••••••••••••"
+                        value={formData.gemini_api_key} 
+                        onChange={(e) => handleFieldChange('gemini_api_key', e.target.value)}
                       />
                     </div>
-                  </div>
-                  <button 
-                    className="erp-button" 
-                    onClick={() => handleSaveSection(['invoice_tax_percentage', 'invoice_due_days', 'invoice_prefix'], 'Invoice Settings')}
-                  >
-                    Save Invoice Configurations
-                  </button>
-                </div>
-              </section>
-            )}
 
-            {/* Notification Form */}
-            {activeConfigSection === 'notifications' && (
-              <section className="erp-card">
-                <div className="erp-card__header">
-                  <h3 className="erp-card__title">Global Notification Policies</h3>
-                  <p className="erp-card__subtitle">Activate/deactivate dispatch channels for system triggers.</p>
-                </div>
-                <div className="erp-card__body" style={{ display: 'grid', gap: '20px' }}>
-                  <div style={{ display: 'grid', gap: '12px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.95rem', cursor: 'pointer' }}>
+                    <div className="erp-form-group">
+                      <label className="erp-label">WhatsApp Gateway Access Token</label>
                       <input 
-                        type="checkbox" 
-                        checked={Boolean(formData.notifications_enable_email)} 
-                        onChange={(e) => handleFieldChange('notifications_enable_email', e.target.checked)}
+                        type="password" 
+                        className="erp-input" 
+                        placeholder="EAAG••••••••••••"
+                        value={formData.whatsapp_api_key} 
+                        onChange={(e) => handleFieldChange('whatsapp_api_key', e.target.value)}
                       />
-                      <span>Enable SMTP transactional emails for RFQ/PO operations</span>
-                    </label>
+                    </div>
 
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.95rem', cursor: 'pointer' }}>
+                    <div className="erp-form-group">
+                      <label className="erp-label">SMS Gateway API Credential</label>
                       <input 
-                        type="checkbox" 
-                        checked={Boolean(formData.notifications_enable_sms)} 
-                        onChange={(e) => handleFieldChange('notifications_enable_sms', e.target.checked)}
+                        type="password" 
+                        className="erp-input" 
+                        placeholder="SMS-KEY-••••••••••••"
+                        value={formData.sms_gateway_api_key} 
+                        onChange={(e) => handleFieldChange('sms_gateway_api_key', e.target.value)}
                       />
-                      <span>Enable SMS/WhatsApp transactional alerts on workflows</span>
-                    </label>
+                    </div>
 
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.95rem', cursor: 'pointer' }}>
-                      <input 
-                        type="checkbox" 
-                        checked={Boolean(formData.notifications_enable_push)} 
-                        onChange={(e) => handleFieldChange('notifications_enable_push', e.target.checked)}
-                      />
-                      <span>Enable real-time notification sidebar updates for users</span>
-                    </label>
+                    <button 
+                      className="erp-btn erp-btn--primary" 
+                      style={{ width: 'fit-content' }}
+                      onClick={() => handleSaveSection(['openai_api_key', 'gemini_api_key', 'whatsapp_api_key', 'sms_gateway_api_key'], 'API Keys')}
+                    >
+                      Encrypt & Save API Credentials
+                    </button>
                   </div>
-                  <button 
-                    className="erp-button" 
-                    onClick={() => handleSaveSection(['notifications_enable_email', 'notifications_enable_sms', 'notifications_enable_push'], 'Notification Settings')}
-                  >
-                    Save Notification Policies
-                  </button>
-                </div>
-              </section>
-            )}
-
-            {/* Workflow Form */}
-            {activeConfigSection === 'workflow' && (
-              <section className="erp-card">
-                <div className="erp-card__header">
-                  <h3 className="erp-card__title">Procurement Workflow Policies</h3>
-                  <p className="erp-card__subtitle">Establish automatic validation thresholds and multilevel rules.</p>
-                </div>
-                <div className="erp-card__body" style={{ display: 'grid', gap: '16px' }}>
-                  <div>
-                    <label className="erp-form-label">Auto PO Approval Limit ($)</label>
-                    <input 
-                      type="number" 
-                      className="erp-input" 
-                      placeholder="5000"
-                      value={formData.workflow_po_auto_approve_threshold} 
-                      onChange={(e) => handleFieldChange('workflow_po_auto_approve_threshold', e.target.value)}
-                    />
-                    <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: 'var(--erp-text-muted)' }}>POs generated under this amount are automatically approved. Higher amounts require manager oversight.</p>
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.95rem', cursor: 'pointer', marginTop: '10px' }}>
-                      <input 
-                        type="checkbox" 
-                        checked={Boolean(formData.workflow_require_multilevel_approvals)} 
-                        onChange={(e) => handleFieldChange('workflow_require_multilevel_approvals', e.target.checked)}
-                      />
-                      <span>Require multi-level board approvals for contract values exceeding $100k</span>
-                    </label>
-                  </div>
-
-                  <button 
-                    className="erp-button" 
-                    onClick={() => handleSaveSection(['workflow_po_auto_approve_threshold', 'workflow_require_multilevel_approvals'], 'Workflow Settings')}
-                  >
-                    Save Workflow Configurations
-                  </button>
-                </div>
-              </section>
-            )}
-
-            {/* API Integrations Form */}
-            {activeConfigSection === 'apis' && (
-              <section className="erp-card">
-                <div className="erp-card__header">
-                  <h3 className="erp-card__title">Secure API Gateway Integrations</h3>
-                  <p className="erp-card__subtitle">Encrypted API credentials for LLMs and dispatch gateways.</p>
-                </div>
-                <div className="erp-card__body" style={{ display: 'grid', gap: '16px' }}>
-                  <div>
-                    <label className="erp-form-label">OpenAI API Key</label>
-                    <input 
-                      type="password" 
-                      className="erp-input" 
-                      placeholder="sk-••••••••••••••••"
-                      value={formData.openai_api_key} 
-                      onChange={(e) => handleFieldChange('openai_api_key', e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="erp-form-label">Gemini AI API Key</label>
-                    <input 
-                      type="password" 
-                      className="erp-input" 
-                      placeholder="AIzaSy••••••••••••"
-                      value={formData.gemini_api_key} 
-                      onChange={(e) => handleFieldChange('gemini_api_key', e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="erp-form-label">WhatsApp Gateway Access Token</label>
-                    <input 
-                      type="password" 
-                      className="erp-input" 
-                      placeholder="EAAG••••••••••••"
-                      value={formData.whatsapp_api_key} 
-                      onChange={(e) => handleFieldChange('whatsapp_api_key', e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="erp-form-label">SMS Gateway API Credential</label>
-                    <input 
-                      type="password" 
-                      className="erp-input" 
-                      placeholder="SMS-KEY-••••••••••••"
-                      value={formData.sms_gateway_api_key} 
-                      onChange={(e) => handleFieldChange('sms_gateway_api_key', e.target.value)}
-                    />
-                  </div>
-
-                  <button 
-                    className="erp-button" 
-                    onClick={() => handleSaveSection(['openai_api_key', 'gemini_api_key', 'whatsapp_api_key', 'sms_gateway_api_key'], 'API Keys')}
-                  >
-                    Encrypt & Save API credentials
-                  </button>
-                </div>
-              </section>
-            )}
+                </section>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Security Audit Log View */}
-      {activeTab === 'audit' && (
-        <section className="erp-card">
-          <div className="erp-card__header">
-            <div>
+        {/* Security Audit Log View */}
+        {activeTab === 'audit' && (
+          <section className="erp-card">
+            <div className="erp-card__header">
               <h3 className="erp-card__title">Administrative Activity Access Log</h3>
               <p className="erp-card__subtitle">Immutable records of login attempts, settings updates, and critical modifications.</p>
             </div>
-          </div>
-          <div className="erp-card__body" style={{ padding: 0 }}>
-            {auditLogs.length === 0 ? (
-              <p style={{ color: 'var(--erp-text-muted)', padding: '20px' }}>No audit events logged.</p>
-            ) : (
-              <div className="erp-table-wrapper" style={{ border: 0, borderRadius: 0 }}>
-                <table className="erp-table">
-                  <thead>
-                    <tr>
-                      <th>Timestamp</th>
-                      <th>Admin User</th>
-                      <th>Action Details</th>
-                      <th>Target Module</th>
-                      <th>Client IP</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {auditLogs.map((log) => (
-                      <tr key={log.id}>
-                        <td style={{ whiteSpace: 'nowrap' }}>{new Date(log.created_at).toLocaleString()}</td>
-                        <td style={{ fontWeight: 600 }}>{log.users?.name || 'Admin User'}</td>
-                        <td style={{ color: 'var(--erp-text)' }}>{log.action}</td>
-                        <td><span className="erp-badge erp-badge--info">{log.module}</span></td>
-                        <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{log.ip_address || '127.0.0.1'}</td>
+            <div className="erp-card__body" style={{ padding: 0 }}>
+              {auditLogs.length === 0 ? (
+                <p style={{ color: 'var(--erp-outline)', padding: '20px', textAlign: 'center' }}>No audit events logged.</p>
+              ) : (
+                <div className="erp-table-wrapper" style={{ border: 0, borderRadius: 0 }}>
+                  <table className="erp-table">
+                    <thead>
+                      <tr>
+                        <th>Timestamp</th>
+                        <th>Admin User</th>
+                        <th>Action Details</th>
+                        <th>Target Module</th>
+                        <th>Client IP</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
+                    </thead>
+                    <tbody>
+                      {auditLogs.map((log) => (
+                        <tr key={log.id}>
+                          <td style={{ whiteSpace: 'nowrap' }}>{new Date(log.created_at).toLocaleString()}</td>
+                          <td style={{ fontWeight: 600 }}>{log.users?.name || 'Admin User'}</td>
+                          <td>{log.action}</td>
+                          <td><span className="erp-badge erp-badge--draft">{log.module}</span></td>
+                          <td style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{log.ip_address || '127.0.0.1'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+      </div>
     </EnterpriseErpLayout>
   );
 };

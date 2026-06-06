@@ -1,8 +1,11 @@
 import React from 'react';
+import { Search } from 'lucide-react';
 
-const SearchBar = ({ value, onChange, placeholder = 'Search vendors, POs, invoices, approvals...' }) => (
+const SearchBar = ({ value, onChange, placeholder = 'Search transactions, RFQs, invoices...' }) => (
   <label className="erp-search">
-    <span className="erp-search__icon" aria-hidden="true">⌕</span>
+    <span className="erp-search__icon" aria-hidden="true">
+      <Search size={16} />
+    </span>
     <input
       className="erp-search__input"
       type="search"

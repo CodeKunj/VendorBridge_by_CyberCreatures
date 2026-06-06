@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { authApi } from '../api/authApi';
+import { AlertCircle, Check } from 'lucide-react';
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
@@ -37,17 +38,17 @@ const ForgotPasswordPage = () => {
           <p className="auth-subtitle">Enter your email to receive a recovery link</p>
         </div>
 
-        {message ? (
-          <div className="erp-alert erp-alert--success" role="alert">
-            {message}
+        {message && (
+          <div className="erp-alert erp-alert--success" style={{ marginBottom: '16px' }}>
+            <Check size={15} /> {message}
           </div>
-        ) : null}
+        )}
 
-        {error ? (
-          <div className="erp-alert erp-alert--danger" role="alert">
-            {error}
+        {error && (
+          <div className="erp-alert erp-alert--danger" style={{ marginBottom: '16px' }}>
+            <AlertCircle size={15} /> {error}
           </div>
-        ) : null}
+        )}
 
         <form onSubmit={submit} className="auth-form">
           <div className="erp-form-group">

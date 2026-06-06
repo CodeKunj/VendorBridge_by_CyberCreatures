@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 
 const UserProfileDropdown = ({ user, onLogout, onProfile, onSettings }) => {
   const [open, setOpen] = useState(false);
@@ -32,17 +33,18 @@ const UserProfileDropdown = ({ user, onLogout, onProfile, onSettings }) => {
         aria-expanded={open}
       >
         <span className="erp-profile-dropdown__avatar" aria-hidden="true">{initials}</span>
-        <span>
+        <span style={{ textAlign: 'left' }}>
           <span className="erp-profile-dropdown__name">{user?.name || 'User'}</span>
           <span className="erp-profile-dropdown__role">{user?.roleLabel || user?.role || 'ERP User'}</span>
         </span>
+        <ChevronDown size={14} style={{ color: 'var(--erp-outline)', marginLeft: '4px' }} />
       </button>
 
       {open ? (
         <div className="erp-profile-dropdown__menu" role="menu">
-          <button className="erp-profile-dropdown__menu-item" type="button" onClick={onProfile}>My Profile</button>
-          <button className="erp-profile-dropdown__menu-item" type="button" onClick={onSettings}>Settings</button>
-          <button className="erp-profile-dropdown__menu-item" type="button" onClick={onLogout}>Sign out</button>
+          <button className="erp-profile-dropdown__menu-item" type="button" onClick={() => { onProfile(); setOpen(false); }}>My Profile</button>
+          <button className="erp-profile-dropdown__menu-item" type="button" onClick={() => { onSettings(); setOpen(false); }}>Settings</button>
+          <button className="erp-profile-dropdown__menu-item" type="button" onClick={() => { onLogout(); setOpen(false); }}>Sign out</button>
         </div>
       ) : null}
     </div>

@@ -1,8 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { EnterpriseErpLayout } from '../components/erp';
 import { useAuth } from '../context/AuthContext';
 import { erpApi } from '../api/erpApi';
+import { 
+  FileText, 
+  Printer, 
+  Download, 
+  Mail, 
+  X, 
+  Check, 
+  AlertCircle, 
+  Receipt,
+  DollarSign
+} from 'lucide-react';
 
 const InvoicesPage = () => {
   const { user, logout } = useAuth();
@@ -91,7 +102,6 @@ const InvoicesPage = () => {
     }
   };
 
-  // PO Action methods
   const handleUpdatePoStatus = async (poId, status) => {
     setError('');
     setSuccess('');
@@ -105,13 +115,12 @@ const InvoicesPage = () => {
     }
   };
 
-  // Vendor creating invoice from PO
   const handleOpenInvoiceModal = (po) => {
     setSelectedPo(po);
     setNewInvoice({
       subtotal: po.total_amount,
-      tax_amount: parseFloat((po.total_amount * 0.18).toFixed(2)), // 18% GST estimate
-      due_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 15 days net terms
+      tax_amount: parseFloat((po.total_amount * 0.18).toFixed(2)),
+      due_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     });
     setShowInvoiceModal(true);
   };
@@ -131,7 +140,7 @@ const InvoicesPage = () => {
         total_amount: sub + tax,
         due_date: new Date(newInvoice.due_date).toISOString()
       };
-      const res = await erpApi.invoices.create(payload);
+      await erpApi.invoices.create(payload);
       setSuccess(`Invoice created and submitted successfully!`);
       setShowInvoiceModal(false);
       setActiveTab('invoices');
@@ -141,7 +150,6 @@ const InvoicesPage = () => {
     }
   };
 
-  // Invoice Action methods
   const handleUpdateInvoiceStatus = async (invoiceId, status) => {
     setError('');
     setSuccess('');
@@ -161,7 +169,7 @@ const InvoicesPage = () => {
     setSendingEmail(true);
     try {
       await erpApi.invoices.sendEmail(invoiceId);
-      setSuccess('Invoice and PDF attachment dispatched via Nodemailer successfully');
+      setSuccess('Invoice and PDF attachment dispatched via email successfully');
     } catch (err) {
       setError(err.message || 'Failed to dispatch email');
     } finally {
@@ -208,12 +216,13 @@ const InvoicesPage = () => {
   };
 
   const handleNavigate = (item) => {
-    if (item.id === 'dashboard') {
-      navigate('/dashboard');
-    } else {
-      navigate(`/${item.id}`);
-    }
+    navigate(item.id === 'dashboard' ? '/dashboard' : `/${item.id}`);
   };
+
+  const breadcrumbs = useMemo(() => ([
+    { label: 'Home', href: '/' },
+    { label: 'Billing & Invoices' }
+  ]), []);
 
   return (
     <EnterpriseErpLayout
@@ -225,16 +234,10 @@ const InvoicesPage = () => {
       }}
       onProfile={() => navigate('/dashboard')}
       onSettings={() => navigate('/settings')}
+      breadcrumbs={breadcrumbs}
     >
-      <div className="erp-breadcrumbs">
-        <span className="erp-breadcrumbs__item">ERP Dashboard</span>
-        <span className="erp-breadcrumbs__separator">/</span>
-        <span className="erp-breadcrumbs__current">Billing & Invoices</span>
-      </div>
-
-      <div className="erp-content">
-        {error && <div className="erp-alert erp-alert--danger">{error}</div>}
-        {success && <div className="erp-alert erp-alert--success">{success}</div>}
+        {error && <div className="erp-alert erp-alert--danger"><AlertCircle size={15} /> {error}</div>}
+        {success && <div className="erp-alert erp-alert--success"><Check size={15} /> {success}</div>}
 
         {/* TABS */}
         <div className="erp-tabs" style={{ marginBottom: '16px' }}>
@@ -242,17 +245,17 @@ const InvoicesPage = () => {
             className={`erp-tab ${activeTab === 'pos' ? 'is-active' : ''}`}
             onClick={() => { setActiveTab('pos'); setSelectedPo(null); setSelectedInvoice(null); }}
           >
-            Purchase Orders (POs)
+            <FileText size={14} /> Purchase Orders (POs)
           </button>
           <button 
             className={`erp-tab ${activeTab === 'invoices' ? 'is-active' : ''}`}
             onClick={() => { setActiveTab('invoices'); setSelectedInvoice(null); setSelectedPo(null); }}
           >
-            Vendor Invoices
+            <Receipt size={14} /> Vendor Invoices
           </button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', alignItems: 'start' }}>
           
           {/* LEFT PANEL: RECORDS LIST */}
           <section className="erp-card">
@@ -264,23 +267,23 @@ const InvoicesPage = () => {
 
             <div className="erp-card__body">
               {loading ? (
-                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--erp-text-muted)' }}>
+                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--erp-outline)' }}>
                   Loading transaction data...
                 </div>
               ) : activeTab === 'pos' ? (
                 purchaseOrders.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--erp-text-muted)' }}>
+                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--erp-outline)' }}>
                     No purchase orders found.
                   </div>
                 ) : (
-                  <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
+                  <div className="erp-table-wrapper">
+                    <table className="erp-table">
                       <thead>
-                        <tr style={{ textAlign: 'left', color: 'var(--erp-text-muted)', borderBottom: '1px solid var(--erp-border)' }}>
-                          <th style={{ padding: '10px' }}>PO Number</th>
-                          <th style={{ padding: '10px' }}>Issued Date</th>
-                          <th style={{ padding: '10px' }}>Total Amount</th>
-                          <th style={{ padding: '10px' }}>Status</th>
+                        <tr>
+                          <th>PO Number</th>
+                          <th>Issued Date</th>
+                          <th>Total Amount</th>
+                          <th>Status</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -290,14 +293,13 @@ const InvoicesPage = () => {
                             onClick={() => loadPoDetails(po)}
                             style={{ 
                               cursor: 'pointer', 
-                              borderBottom: '1px solid var(--erp-border)',
-                              background: selectedPo?.id === po.id ? '#f8fafc' : 'transparent' 
+                              background: selectedPo?.id === po.id ? 'var(--erp-surface-container)' : 'transparent' 
                             }}
                           >
-                            <td style={{ padding: '10px' }}><strong>{po.po_number}</strong></td>
-                            <td style={{ padding: '10px' }}>{new Date(po.created_at).toLocaleDateString()}</td>
-                            <td style={{ padding: '10px' }}><strong>${parseFloat(po.total_amount || 0).toFixed(2)}</strong></td>
-                            <td style={{ padding: '10px' }}>
+                            <td><strong>{po.po_number}</strong></td>
+                            <td>{new Date(po.created_at).toLocaleDateString()}</td>
+                            <td><strong>${parseFloat(po.total_amount || 0).toFixed(2)}</strong></td>
+                            <td>
                               <span className={`erp-badge erp-badge--${
                                 po.status === 'issued' ? 'info' :
                                 po.status === 'accepted' ? 'success' :
@@ -315,18 +317,18 @@ const InvoicesPage = () => {
                 )
               ) : (
                 invoices.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--erp-text-muted)' }}>
+                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--erp-outline)' }}>
                     No invoices recorded.
                   </div>
                 ) : (
-                  <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
+                  <div className="erp-table-wrapper">
+                    <table className="erp-table">
                       <thead>
-                        <tr style={{ textAlign: 'left', color: 'var(--erp-text-muted)', borderBottom: '1px solid var(--erp-border)' }}>
-                          <th style={{ padding: '10px' }}>Invoice Number</th>
-                          <th style={{ padding: '10px' }}>Due Date</th>
-                          <th style={{ padding: '10px' }}>Total Amount</th>
-                          <th style={{ padding: '10px' }}>Status</th>
+                        <tr>
+                          <th>Invoice Number</th>
+                          <th>Due Date</th>
+                          <th>Total Amount</th>
+                          <th>Status</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -336,14 +338,13 @@ const InvoicesPage = () => {
                             onClick={() => loadInvoiceDetails(inv)}
                             style={{ 
                               cursor: 'pointer', 
-                              borderBottom: '1px solid var(--erp-border)',
-                              background: selectedInvoice?.id === inv.id ? '#f8fafc' : 'transparent' 
+                              background: selectedInvoice?.id === inv.id ? 'var(--erp-surface-container)' : 'transparent' 
                             }}
                           >
-                            <td style={{ padding: '10px' }}><strong>{inv.invoice_number}</strong></td>
-                            <td style={{ padding: '10px' }}>{new Date(inv.due_date).toLocaleDateString()}</td>
-                            <td style={{ padding: '10px' }}><strong>${parseFloat(inv.total_amount || 0).toFixed(2)}</strong></td>
-                            <td style={{ padding: '10px' }}>
+                            <td><strong>{inv.invoice_number}</strong></td>
+                            <td>{new Date(inv.due_date).toLocaleDateString()}</td>
+                            <td><strong>${parseFloat(inv.total_amount || 0).toFixed(2)}</strong></td>
+                            <td>
                               <span className={`erp-badge erp-badge--${
                                 inv.status === 'paid' ? 'success' :
                                 inv.status === 'approved' ? 'info' :
@@ -367,41 +368,40 @@ const InvoicesPage = () => {
             <div className="erp-card__header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h2 className="erp-card__title">Document Inspector</h2>
-                <p className="erp-card__subtitle">Full breakdown, prints, and downloads.</p>
               </div>
               {selectedInvoice && (
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button 
-                    className="erp-btn erp-btn--secondary" 
-                    style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                    className="erp-btn erp-btn--outline" 
+                    style={{ padding: '6px 10px', fontSize: '0.8rem', height: '32px' }}
                     onClick={() => handlePrint('invoice')}
                   >
-                    Print
+                    <Printer size={13} /> Print
                   </button>
                   <button 
                     className="erp-btn erp-btn--primary" 
-                    style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                    style={{ padding: '6px 10px', fontSize: '0.8rem', height: '32px' }}
                     onClick={() => handleDownloadPdf('invoice', selectedInvoice.id)}
                   >
-                    PDF
+                    <Download size={13} /> PDF
                   </button>
                 </div>
               )}
               {selectedPo && (
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button 
-                    className="erp-btn erp-btn--secondary" 
-                    style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                    className="erp-btn erp-btn--outline" 
+                    style={{ padding: '6px 10px', fontSize: '0.8rem', height: '32px' }}
                     onClick={() => handlePrint('po')}
                   >
-                    Print
+                    <Printer size={13} /> Print
                   </button>
                   <button 
                     className="erp-btn erp-btn--primary" 
-                    style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                    style={{ padding: '6px 10px', fontSize: '0.8rem', height: '32px' }}
                     onClick={() => handleDownloadPdf('po', selectedPo.id)}
                   >
-                    PDF
+                    <Download size={13} /> PDF
                   </button>
                 </div>
               )}
@@ -409,62 +409,62 @@ const InvoicesPage = () => {
 
             <div className="erp-card__body">
               {loadingDetails ? (
-                <p style={{ textAlign: 'center', color: 'var(--erp-text-muted)' }}>Fetching detail records...</p>
+                <p style={{ textAlign: 'center', color: 'var(--erp-outline)', padding: '20px' }}>Fetching details...</p>
               ) : selectedPo ? (
                 <div style={{ display: 'grid', gap: '20px' }}>
                   <div ref={printAreaRef}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid var(--erp-border)', paddingBottom: '12px', marginBottom: '16px' }}>
                       <div>
-                        <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--erp-primary)' }}>Purchase Order</h3>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--erp-text-muted)', marginTop: '4px' }}>
+                        <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--erp-primary)', fontWeight: 600 }}>Purchase Order</h3>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--erp-outline)', marginTop: '4px' }}>
                           Number: <strong>{selectedPo.po_number}</strong>
                         </div>
                       </div>
-                      <div style={{ textAlign: 'right', fontSize: '0.85rem' }}>
+                      <div style={{ textAlign: 'right', fontSize: '0.8rem' }}>
                         <div>Issued: {new Date(selectedPo.created_at).toLocaleDateString()}</div>
                         <div style={{ marginTop: '4px' }}>
-                          Status: <span style={{ textTransform: 'uppercase', fontWeight: 600 }}>{selectedPo.status}</span>
+                          Status: <span style={{ textTransform: 'uppercase', fontWeight: 700, color: 'var(--erp-primary)' }}>{selectedPo.status}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px', fontSize: '0.88rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px', fontSize: '0.82rem' }}>
                       <div>
-                        <h4 style={{ margin: '0 0 6px 0', fontSize: '0.9rem', color: 'var(--erp-text-muted)' }}>Vendor / Supplier:</h4>
+                        <h4 style={{ margin: '0 0 6px 0', fontSize: '0.78rem', textTransform: 'uppercase', color: 'var(--erp-outline)', fontWeight: 700 }}>Supplier:</h4>
                         <div><strong>{selectedPo.vendors?.company_name}</strong></div>
                         <div>Email: {selectedPo.vendors?.email}</div>
                       </div>
                       <div>
-                        <h4 style={{ margin: '0 0 6px 0', fontSize: '0.9rem', color: 'var(--erp-text-muted)' }}>Delivery Address:</h4>
+                        <h4 style={{ margin: '0 0 6px 0', fontSize: '0.78rem', textTransform: 'uppercase', color: 'var(--erp-outline)', fontWeight: 700 }}>Delivery Address:</h4>
                         <div>VendorBridge HQ</div>
                         <div>finance@vendorbridge.com</div>
                       </div>
                     </div>
 
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', marginBottom: '16px' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', marginBottom: '16px' }}>
                       <thead>
-                        <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--erp-border)', textAlign: 'left' }}>
-                          <th style={{ padding: '6px' }}>Item</th>
-                          <th style={{ padding: '6px', textAlign: 'right' }}>Qty</th>
-                          <th style={{ padding: '6px', textAlign: 'right' }}>Unit ($)</th>
-                          <th style={{ padding: '6px', textAlign: 'right' }}>Total ($)</th>
+                        <tr style={{ background: 'var(--erp-surface-container-low)', borderBottom: '1px solid var(--erp-border)', textAlign: 'left' }}>
+                          <th style={{ padding: '8px' }}>Item</th>
+                          <th style={{ padding: '8px', textAlign: 'right' }}>Qty</th>
+                          <th style={{ padding: '8px', textAlign: 'right' }}>Unit ($)</th>
+                          <th style={{ padding: '8px', textAlign: 'right' }}>Total ($)</th>
                         </tr>
                       </thead>
                       <tbody>
                         {selectedPo.items?.map((item, idx) => (
                           <tr key={idx} style={{ borderBottom: '1px solid var(--erp-border)' }}>
-                            <td style={{ padding: '6px' }}>{item.item_name}</td>
-                            <td style={{ padding: '6px', textAlign: 'right' }}>{item.quantity}</td>
-                            <td style={{ padding: '6px', textAlign: 'right' }}>${parseFloat(item.unit_price || 0).toFixed(2)}</td>
-                            <td style={{ padding: '6px', textAlign: 'right' }}>${parseFloat(item.total_price || 0).toFixed(2)}</td>
+                            <td style={{ padding: '8px' }}>{item.item_name}</td>
+                            <td style={{ padding: '8px', textAlign: 'right' }}>{item.quantity}</td>
+                            <td style={{ padding: '8px', textAlign: 'right' }}>${parseFloat(item.unit_price || 0).toFixed(2)}</td>
+                            <td style={{ padding: '8px', textAlign: 'right' }}>${parseFloat(item.total_price || 0).toFixed(2)}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
 
-                    <div style={{ display: 'flex', justifycontent: 'flex-end', borderTop: '2px solid var(--erp-border)', paddingTop: '10px', textAlign: 'right' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '2px solid var(--erp-border)', paddingTop: '10px', textAlign: 'right' }}>
                       <div style={{ marginLeft: 'auto' }}>
-                        <span style={{ color: 'var(--erp-text-muted)', fontSize: '0.88rem' }}>Total Amount:</span>
+                        <span style={{ color: 'var(--erp-outline)', fontSize: '0.82rem' }}>Total Amount:</span>
                         <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--erp-primary)' }}>
                           ${parseFloat(selectedPo.total_amount || 0).toFixed(2)}
                         </div>
@@ -474,7 +474,6 @@ const InvoicesPage = () => {
 
                   <hr style={{ border: '0', borderTop: '1px solid var(--erp-border)', margin: '12px 0' }} />
 
-                  {/* ROLE ACTIONS FOR PO */}
                   {isProcurement && selectedPo.status === 'draft' && (
                     <button className="erp-btn erp-btn--primary" onClick={() => handleUpdatePoStatus(selectedPo.id, 'issued')}>
                       Issue Purchase Order
@@ -482,17 +481,17 @@ const InvoicesPage = () => {
                   )}
                   {isVendor && selectedPo.status === 'issued' && (
                     <div style={{ display: 'flex', gap: '10px' }}>
-                      <button className="erp-btn erp-btn--primary" onClick={() => handleUpdatePoStatus(selectedPo.id, 'accepted')}>
+                      <button className="erp-btn erp-btn--primary" style={{ flex: 1 }} onClick={() => handleUpdatePoStatus(selectedPo.id, 'accepted')}>
                         Accept Order
                       </button>
-                      <button className="erp-btn erp-btn--danger" onClick={() => handleUpdatePoStatus(selectedPo.id, 'cancelled')}>
+                      <button className="erp-btn erp-btn--danger" style={{ flex: 1 }} onClick={() => handleUpdatePoStatus(selectedPo.id, 'cancelled')}>
                         Reject Order
                       </button>
                     </div>
                   )}
                   {isVendor && selectedPo.status === 'accepted' && (
-                    <div style={{ background: '#f8fafc', border: '1px solid var(--erp-border)', padding: '14px', borderRadius: '12px' }}>
-                      <p style={{ margin: '0 0 10px 0', fontSize: '0.9rem', fontWeight: 600 }}>Billing Actions</p>
+                    <div style={{ background: 'var(--erp-surface-container-low)', border: '1px solid var(--erp-outline-variant)', padding: '14px', borderRadius: '12px' }}>
+                      <p style={{ margin: '0 0 10px 0', fontSize: '0.85rem', fontWeight: 600 }}>Billing Actions</p>
                       <button className="erp-btn erp-btn--primary" style={{ width: '100%' }} onClick={() => handleOpenInvoiceModal(selectedPo)}>
                         Create & Submit Invoice
                       </button>
@@ -502,14 +501,14 @@ const InvoicesPage = () => {
               ) : selectedInvoice ? (
                 <div style={{ display: 'grid', gap: '20px' }}>
                   <div ref={printAreaRef}>
-                    <div style={{ display: 'flex', justifycontent: 'space-between', borderBottom: '2px solid var(--erp-border)', paddingBottom: '12px', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid var(--erp-border)', paddingBottom: '12px', marginBottom: '16px' }}>
                       <div>
-                        <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--erp-primary)' }}>Tax Invoice</h3>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--erp-text-muted)', marginTop: '4px' }}>
+                        <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--erp-primary)', fontWeight: 600 }}>Tax Invoice</h3>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--erp-outline)', marginTop: '4px' }}>
                           Number: <strong>{selectedInvoice.invoice_number}</strong>
                         </div>
                       </div>
-                      <div style={{ textAlign: 'right', fontSize: '0.85rem' }}>
+                      <div style={{ textAlign: 'right', fontSize: '0.8rem' }}>
                         <div>Issued: {new Date(selectedInvoice.created_at).toLocaleDateString()}</div>
                         <div style={{ marginTop: '4px' }}>
                           Due Date: <strong>{new Date(selectedInvoice.due_date).toLocaleDateString()}</strong>
@@ -517,43 +516,43 @@ const InvoicesPage = () => {
                       </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px', fontSize: '0.88rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px', fontSize: '0.82rem' }}>
                       <div>
-                        <h4 style={{ margin: '0 0 6px 0', fontSize: '0.9rem', color: 'var(--erp-text-muted)' }}>Bill From (Vendor):</h4>
+                        <h4 style={{ margin: '0 0 6px 0', fontSize: '0.78rem', textTransform: 'uppercase', color: 'var(--erp-outline)', fontWeight: 700 }}>Bill From:</h4>
                         <div><strong>{selectedInvoice.vendors?.company_name}</strong></div>
                         <div>GSTIN: {selectedInvoice.vendors?.gst_number || 'N/A'}</div>
                         <div>Email: {selectedInvoice.vendors?.email}</div>
                       </div>
                       <div>
-                        <h4 style={{ margin: '0 0 6px 0', fontSize: '0.9rem', color: 'var(--erp-text-muted)' }}>Bill To:</h4>
+                        <h4 style={{ margin: '0 0 6px 0', fontSize: '0.78rem', textTransform: 'uppercase', color: 'var(--erp-outline)', fontWeight: 700 }}>Bill To:</h4>
                         <div><strong>VendorBridge Finance</strong></div>
                         <div>PO Ref: {selectedInvoice.purchase_orders?.po_number || 'N/A'}</div>
                       </div>
                     </div>
 
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', marginBottom: '16px' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', marginBottom: '16px' }}>
                       <thead>
-                        <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--erp-border)', textAlign: 'left' }}>
-                          <th style={{ padding: '6px' }}>Item</th>
-                          <th style={{ padding: '6px', textAlign: 'right' }}>Qty</th>
-                          <th style={{ padding: '6px', textAlign: 'right' }}>Unit ($)</th>
-                          <th style={{ padding: '6px', textAlign: 'right' }}>Total ($)</th>
+                        <tr style={{ background: 'var(--erp-surface-container-low)', borderBottom: '1px solid var(--erp-border)', textAlign: 'left' }}>
+                          <th style={{ padding: '8px' }}>Item</th>
+                          <th style={{ padding: '8px', textAlign: 'right' }}>Qty</th>
+                          <th style={{ padding: '8px', textAlign: 'right' }}>Unit ($)</th>
+                          <th style={{ padding: '8px', textAlign: 'right' }}>Total ($)</th>
                         </tr>
                       </thead>
                       <tbody>
                         {selectedInvoice.items?.map((item, idx) => (
                           <tr key={idx} style={{ borderBottom: '1px solid var(--erp-border)' }}>
-                            <td style={{ padding: '6px' }}>{item.item_name}</td>
-                            <td style={{ padding: '6px', textAlign: 'right' }}>{item.quantity}</td>
-                            <td style={{ padding: '6px', textAlign: 'right' }}>${parseFloat(item.unit_price || 0).toFixed(2)}</td>
-                            <td style={{ padding: '6px', textAlign: 'right' }}>${parseFloat(item.total_price || 0).toFixed(2)}</td>
+                            <td style={{ padding: '8px' }}>{item.item_name}</td>
+                            <td style={{ padding: '8px', textAlign: 'right' }}>{item.quantity}</td>
+                            <td style={{ padding: '8px', textAlign: 'right' }}>${parseFloat(item.unit_price || 0).toFixed(2)}</td>
+                            <td style={{ padding: '8px', textAlign: 'right' }}>${parseFloat(item.total_price || 0).toFixed(2)}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', borderTop: '2px solid var(--erp-border)', paddingTop: '10px', fontSize: '0.88rem' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '150px 100px', gap: '4px', textAlign: 'right' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', borderTop: '2px solid var(--erp-border)', paddingTop: '10px', fontSize: '0.82rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '120px 80px', gap: '4px', textAlign: 'right' }}>
                         <span>Subtotal:</span>
                         <strong>${parseFloat(selectedInvoice.subtotal || 0).toFixed(2)}</strong>
 
@@ -563,8 +562,8 @@ const InvoicesPage = () => {
                         <span>SGST (9.0%):</span>
                         <span>${parseFloat((selectedInvoice.tax_amount || 0) / 2).toFixed(2)}</span>
 
-                        <span style={{ fontSize: '1rem', fontWeight: 'bold', marginTop: '6px' }}>Total Amount:</span>
-                        <strong style={{ fontSize: '1.1rem', color: 'var(--erp-primary)', marginTop: '6px' }}>
+                        <span style={{ fontSize: '0.9rem', fontWeight: 'bold', marginTop: '6px' }}>Total Amount:</span>
+                        <strong style={{ fontSize: '0.9rem', color: 'var(--erp-primary)', marginTop: '6px' }}>
                           ${parseFloat(selectedInvoice.total_amount || 0).toFixed(2)}
                         </strong>
                       </div>
@@ -573,31 +572,29 @@ const InvoicesPage = () => {
 
                   <hr style={{ border: '0', borderTop: '1px solid var(--erp-border)', margin: '12px 0' }} />
 
-                  {/* EMAIL ACTION */}
                   <button 
-                    className="erp-btn erp-btn--outline" 
+                    className="erp-btn erp-btn--secondary" 
                     onClick={() => handleSendInvoiceEmail(selectedInvoice.id)}
                     disabled={sendingEmail}
                     style={{ width: '100%' }}
                   >
-                    {sendingEmail ? 'Dispatching Mail...' : 'Email Invoice & Attachment'}
+                    <Mail size={14} /> {sendingEmail ? 'Dispatching Mail...' : 'Email Invoice Notification'}
                   </button>
 
-                  {/* STATUS CONTROLS */}
                   {(isProcurement || isManager) && selectedInvoice.status !== 'paid' && (
-                    <div style={{ display: 'flex', gap: '10px' }}>
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
                       <button className="erp-btn erp-btn--primary" style={{ flex: 1 }} onClick={() => handleUpdateInvoiceStatus(selectedInvoice.id, 'paid')}>
-                        Mark as Paid
+                        <Check size={14} /> Mark Paid
                       </button>
                       <button className="erp-btn erp-btn--danger" style={{ flex: 1 }} onClick={() => handleUpdateInvoiceStatus(selectedInvoice.id, 'voided')}>
-                        Void Invoice
+                        <X size={14} /> Void
                       </button>
                     </div>
                   )}
                 </div>
               ) : (
-                <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--erp-text-muted)' }}>
-                  Select a record from the table to view details, dispatch billing emails, or export documents.
+                <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--erp-outline)' }}>
+                  Select a record from the registry table to inspect the transaction details.
                 </div>
               )}
             </div>
@@ -607,18 +604,18 @@ const InvoicesPage = () => {
         {/* CREATE INVOICE MODAL */}
         {showInvoiceModal && (
           <div className="erp-modal-overlay">
-            <div className="erp-modal">
+            <div className="erp-modal" style={{ width: 'min(500px, 95vw)' }}>
               <div className="erp-modal__header">
                 <h3 className="erp-card__title">Create Invoice</h3>
                 <button 
-                  style={{ border: 0, background: 'transparent', fontSize: '1.5rem', cursor: 'pointer' }}
+                  style={{ border: 0, background: 'transparent', cursor: 'pointer' }}
                   onClick={() => setShowInvoiceModal(false)}
                 >
-                  &times;
+                  <X size={18} />
                 </button>
               </div>
               <form onSubmit={handleCreateInvoice}>
-                <div className="erp-modal__body">
+                <div className="erp-modal__body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div className="erp-form">
                     <div className="erp-form-group">
                       <label className="erp-label">Associated Purchase Order</label>
@@ -686,7 +683,6 @@ const InvoicesPage = () => {
             </div>
           </div>
         )}
-      </div>
     </EnterpriseErpLayout>
   );
 };
