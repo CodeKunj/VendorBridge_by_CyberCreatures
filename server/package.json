@@ -7,7 +7,9 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "dev:debug": "nodemon --inspect server.js",
-    "check": "node -e \"require('./src/config/env'); require('./src/app'); console.log('backend bootstrap ok')\""
+    "check": "node -e \"require('./src/config/env'); require('./src/app'); console.log('backend bootstrap ok')\"",
+    "seed": "node scripts/seed-test-data.js",
+    "seed:reset": "node scripts/seed-test-data.js --reset"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.7",
