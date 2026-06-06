@@ -19,7 +19,19 @@ app.use(helmet({
   contentSecurityPolicy: false,
 }));
 app.use(cors({
-  origin: env.corsOrigins,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Render health checks)
+    if (!origin) return callback(null, true);
+    // Allow configured origins + any Vercel preview/production deployments
+    const allowed = [
+      ...env.corsOrigins,
+      'https://vendorbridge-by-cybercreatures.onrender.com',
+    ];
+    const isAllowed =
+      allowed.includes(origin) ||
+      /^https:\/\/.*\.vercel\.app$/.test(origin);
+    callback(isAllowed ? null : new Error('Not allowed by CORS'), isAllowed);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
