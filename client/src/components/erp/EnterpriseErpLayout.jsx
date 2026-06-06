@@ -50,16 +50,18 @@ const EnterpriseErpLayout = ({
 
   // Filter Nav Items based on user role
   const navItems = useMemo(() => {
-    return defaultNavItems.filter(item => {
-      if (item.adminOnly && user?.role !== 'admin') {
-        return false;
-      }
-      // Vendors don't see core procurement screens
-      if (user?.role === 'vendor' && ['dashboard', 'vendors', 'compare', 'reports', 'activity-logs'].includes(item.id)) {
-        return false;
-      }
-      return true;
-    });
+    if (!user) return [];
+
+    // Define exact allowed menu items per role
+    const roleAllowedItems = {
+      admin: ['dashboard', 'vendors', 'rfqs', 'compare', 'approvals', 'purchase-orders', 'invoices', 'reports', 'activity-logs', 'settings'],
+      procurement_officer: ['dashboard', 'vendors', 'rfqs', 'compare', 'purchase-orders', 'invoices'],
+      manager: ['dashboard', 'vendors', 'compare', 'approvals', 'purchase-orders', 'invoices', 'reports'],
+      vendor: ['vendor-portal', 'purchase-orders'],
+    };
+
+    const allowedIds = roleAllowedItems[user.role] || [];
+    return defaultNavItems.filter(item => allowedIds.includes(item.id));
   }, [user]);
 
   // Fetch notifications helper
